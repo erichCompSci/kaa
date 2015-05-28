@@ -17,6 +17,6 @@ package org.kaaproject.kaa.sandbox;
 
 public enum BoxType {
 
-    VBOX
+    VBOX, DOCKER
     
 }

@@ -39,6 +39,7 @@ import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
 import org.apache.commons.io.FilenameUtils;
@@ -58,7 +59,6 @@ import org.apache.tools.ant.types.FileSet;
 import org.kaaproject.kaa.sandbox.demo.AbstractDemoBuilder;
 import org.kaaproject.kaa.sandbox.demo.DemoBuilder;
 import org.kaaproject.kaa.sandbox.demo.DemoBuildersRegistry;
-import org.kaaproject.kaa.sandbox.demo.projects.DockerfileRestGenerator;
 import org.kaaproject.kaa.sandbox.demo.projects.Project;
 import org.kaaproject.kaa.sandbox.demo.projects.ProjectsConfig;
 import org.kaaproject.kaa.sandbox.rest.SandboxClient;
@@ -125,13 +125,11 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
             schedulePackagesInstall();
             scheduleServicesStart();
             LOG.info("Executing remote ssh commands...");
-            executeScheduledSshCommands();
+            executeScheduledSandboxCommands();
             LOG.info("Remote ssh commands execution is completed.");
-            LOG.info("Sleeping 80 sec.");
-            Thread.sleep(80000);
+            sleepForSeconds(80);
             initBoxData();
-            LOG.info("Sleeping 20 sec.");
-            Thread.sleep(20000);
+            sleepForSeconds(20);
             unprovisionBox();
             stopBox();
             cleanupBox();
@@ -139,7 +137,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         } catch (Exception e) {
             LOG.error("Failed to build sandbox image!", e);
             dumpLogs();
-            LOG.error("Look for sandbox build logs at: " + LOG_DUMP_LOCATION);
+            LOG.error("Look for sandbox build logs at: '{}'", LOG_DUMP_LOCATION);
             throw e;
         } finally {
             if (boxLoaded()) {
@@ -151,7 +149,18 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         }
     }
 
-    private void loadBox() throws Exception {
+
+    protected void sleepForSeconds(long seconds){
+        LOG.info("Sleeping {} sec.", seconds);
+        try {
+            Thread.sleep(seconds*1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    protected void loadBox() throws Exception {
         LOG.info("Loading box '{}' ...", boxName);
         String fileName = FilenameUtils.getName(baseImageUrl.toString());
         baseImageFile = new File(System.getProperty("java.io.tmpdir"), fileName);
@@ -238,12 +247,12 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
 
     private void provisionBox() throws Exception {
         provisionBoxImpl();
-        scheduleSudoSshCommand("rm -rf " + "/"+SHARED_FOLDER);
-        scheduleSudoSshCommand("mkdir -p " + "/"+SHARED_FOLDER);
-        scheduleSudoSshCommand("mkdir -p " + SANDBOX_FOLDER);
-        scheduleSudoSshCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + "/"+SHARED_FOLDER);
-        scheduleSudoSshCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + SANDBOX_FOLDER);
-        executeScheduledSshCommands();
+        scheduleSudoSandboxCommand("rm -rf " + "/"+SHARED_FOLDER);
+        scheduleSudoSandboxCommand("mkdir -p " + "/"+SHARED_FOLDER);
+        scheduleSudoSandboxCommand("mkdir -p " + SANDBOX_FOLDER);
+        scheduleSudoSandboxCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + "/"+SHARED_FOLDER);
+        scheduleSudoSandboxCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + SANDBOX_FOLDER);
+        executeScheduledSandboxCommands();
 
         LOG.info("Transfering sandbox data...");
         transferAllFromDir(basePath.getAbsolutePath(), "/"+SHARED_FOLDER);
@@ -252,7 +261,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
     }
 
     private void unprovisionBox() throws Exception {
-        executeSudoSsh("rm -rf " + "/"+SHARED_FOLDER);
+        executeSudoSandbox("rm -rf " + "/" + SHARED_FOLDER);
         unprovisionBoxImpl();
     }
 
@@ -288,18 +297,6 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         LOG.info("Box '{}' was unloaded.", boxName);
     }
 
-    protected abstract void loadBoxImpl() throws Exception;
-    protected abstract void prepareBoxImpl() throws Exception;
-    protected abstract void startBoxImpl() throws Exception;
-    protected abstract void provisionBoxImpl() throws Exception;
-    protected abstract void unprovisionBoxImpl() throws Exception;
-    protected abstract void stopBoxImpl() throws Exception;
-    protected abstract void cleanupBoxImpl() throws Exception;
-    protected abstract void exportBoxImpl() throws Exception;
-    protected abstract void unloadBoxImpl() throws Exception;
-
-    protected abstract boolean boxLoaded() throws Exception;
-    protected abstract boolean boxRunning() throws Exception;
 
 
     protected void schedulePackagesInstall() {
@@ -307,7 +304,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
             String command = osType.getInstallPackageTemplate().
                     replaceAll(DISTRO_PATH_VAR, DISTRO_PATH).
                     replaceAll(PACKAGE_NAME_VAR, kaaPackage.getPackageName());
-            scheduleSudoSshCommand(command);
+            scheduleSudoSandboxCommand(command);
         }
     }
 
@@ -315,12 +312,55 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         for (KaaPackage kaaPackage : KaaPackage.values()) {
             String command = osType.getStartServiceTemplate().
                     replaceAll(SERVICE_NAME_VAR, kaaPackage.getServiceName());
-            scheduleSudoSshCommand(command);
+            scheduleSudoSandboxCommand(command);
         }
     }
 
+
+
+
+
     protected void initBoxData() throws Exception {
 
+        scheduleSudoSandboxCommand("rm -rf " + SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
+        scheduleSudoSandboxCommand("rm -f " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
+        scheduleSudoSandboxCommand("rm -f " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
+        scheduleSudoSandboxCommand("cp -r " + DEMO_PROJECTS_PATH + " " + SANDBOX_FOLDER + "/");
+        scheduleSudoSandboxCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
+        scheduleSudoSandboxCommand("cp -r " + SANDBOX_PATH+"/*" + " " + ADMIN_FOLDER + "/");
+        scheduleSudoSandboxCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + ADMIN_FOLDER + "/webapps");
+        scheduleSudoSandboxCommand("sed -i \"s/\\(tenant_developer_user=\\).*\\$/\\1"+AbstractDemoBuilder.tenantDeveloperUser+"/\" " + ADMIN_FOLDER +"/conf/sandbox-server.properties");
+        scheduleSudoSandboxCommand("sed -i \"s/\\(tenant_developer_password=\\).*\\$/\\1"+AbstractDemoBuilder.tenantDeveloperPassword+"/\" " + ADMIN_FOLDER +"/conf/sandbox-server.properties");
+        String stopAdminCommand = osType.getStopServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
+        scheduleSudoSandboxCommand(stopAdminCommand);
+        executeScheduledSandboxCommands();
+
+
+
+        File changeKaaHostFile = prepareChangeKaaHostFile();
+        File sandboxSplashFile = prepareSandboxSplashFile();
+        transferFile(changeKaaHostFile.getAbsolutePath(), SANDBOX_FOLDER);
+        transferFile(sandboxSplashFile.getAbsolutePath(), SANDBOX_FOLDER);
+
+
+        executeSudoSandbox("chmod +x " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
+        executeSudoSandbox("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
+        String startAdminCommand = osType.getStartServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
+        executeSudoSandbox(startAdminCommand);
+
+        sleepForSeconds(50);
+
+        buildDemoApplications();
+    }
+
+
+
+
+
+
+
+
+    protected File prepareChangeKaaHostFile() throws IOException {
         //Change kaa hosts file
         String changeKaaHostFileTemplate = FileUtils.readResource(CHANGE_KAA_HOST_TEMPLATE);
         String stopServices = "";
@@ -348,25 +388,36 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         }
 
         String changeKaaHostFileSource = changeKaaHostFileTemplate.replaceAll(STOP_SERVICES_VAR, stopServices)
-                                                                  .replaceAll(SET_NEW_HOSTS, setNewHosts)
-                                                                  .replaceAll(START_SERVICES_VAR, startServices);
+                .replaceAll(SET_NEW_HOSTS, setNewHosts)
+                .replaceAll(START_SERVICES_VAR, startServices);
 
         File changeKaaHostFile = new File(distroPath, CHANGE_KAA_HOST);
         FileOutputStream fos = new FileOutputStream(changeKaaHostFile);
         fos.write(changeKaaHostFileSource.getBytes());
         fos.flush();
         fos.close();
+        return changeKaaHostFile;
+    }
 
-        //Load demo data via REST API
-        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort, new DockerfileRestGenerator());
-        List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
-        List<Project> projects = new ArrayList<>();
-        for (DemoBuilder demoBuilder : demoBuilders) {
-            demoBuilder.buildDemoApplication(adminClient);
-            projects.addAll(demoBuilder.getProjectConfigs());
-        }
 
-        //Prepare projects XML file
+    protected File prepareSandboxSplashFile() throws IOException {
+        //Prepare sandbox splash Python script
+        String sandboxSplashFileTemplate = FileUtils.readResource(SANDBOX_SPLASH_PY_TEMPLATE);
+        String sandboxSplashFileSource = AbstractDemoBuilder.updateCredentialsInfo(sandboxSplashFileTemplate);
+
+        sandboxSplashFileSource = sandboxSplashFileSource.replaceAll(WEB_ADMIN_PORT_VAR, DEFAULT_WEB_ADMIN_PORT+"")
+                .replaceAll(SSH_FORWARD_PORT_VAR, DEFAULT_SSH_FORWARD_PORT + "");
+
+        File sandboxSplashFile = new File(distroPath, SANDBOX_SPLASH_PY);
+        FileOutputStream fos = new FileOutputStream(sandboxSplashFile);
+        fos.write(sandboxSplashFileSource.getBytes());
+        fos.flush();
+        fos.close();
+        return sandboxSplashFile;
+    }
+
+
+    protected File prepareProjectsXmlFile(List<Project> projects) throws JAXBException {
         File projectsXmlFile = new File(demoProjectsPath, DEMO_PROJECTS_XML);
         ProjectsConfig projectsConfig = new ProjectsConfig();
         projectsConfig.getProjects().addAll(projects);
@@ -375,49 +426,21 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         Marshaller marshaller = jc.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
         marshaller.marshal(projectsConfig, projectsXmlFile);
+        return projectsXmlFile;
+    }
 
-        //Prepare sandbox splash Python script
-        String sandboxSplashFileTemplate = FileUtils.readResource(SANDBOX_SPLASH_PY_TEMPLATE);
-        String sandboxSplashFileSource = AbstractDemoBuilder.updateCredentialsInfo(sandboxSplashFileTemplate);
 
-        sandboxSplashFileSource = sandboxSplashFileSource.replaceAll(WEB_ADMIN_PORT_VAR, DEFAULT_WEB_ADMIN_PORT+"")
-                                                         .replaceAll(SSH_FORWARD_PORT_VAR, DEFAULT_SSH_FORWARD_PORT + "");
 
-        File sandboxSplashFile = new File(distroPath, SANDBOX_SPLASH_PY);
-        fos = new FileOutputStream(sandboxSplashFile);
-        fos.write(sandboxSplashFileSource.getBytes());
-        fos.flush();
-        fos.close();
-
-        scheduleSudoSshCommand("rm -rf " + SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
-        scheduleSudoSshCommand("rm -f " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
-        scheduleSudoSshCommand("rm -f " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
-        scheduleSudoSshCommand("cp -r " + DEMO_PROJECTS_PATH + " " + SANDBOX_FOLDER + "/");
-        scheduleSudoSshCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
-        scheduleSudoSshCommand("cp -r " + SANDBOX_PATH+"/*" + " " + ADMIN_FOLDER + "/");
-        scheduleSudoSshCommand("chown -R "+SSH_USERNAME+":"+SSH_USERNAME+" " + ADMIN_FOLDER + "/webapps");
-        scheduleSudoSshCommand("sed -i \"s/\\(tenant_developer_user=\\).*\\$/\\1"+AbstractDemoBuilder.tenantDeveloperUser+"/\" " + ADMIN_FOLDER +"/conf/sandbox-server.properties");
-        scheduleSudoSshCommand("sed -i \"s/\\(tenant_developer_password=\\).*\\$/\\1"+AbstractDemoBuilder.tenantDeveloperPassword+"/\" " + ADMIN_FOLDER +"/conf/sandbox-server.properties");
-
-        String stopAdminCommand = osType.getStopServiceTemplate().
-                replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
-        scheduleSudoSshCommand(stopAdminCommand);
-
-        executeScheduledSshCommands();
-
-        transferFile(changeKaaHostFile.getAbsolutePath(), SANDBOX_FOLDER);
+    protected void buildDemoApplications() throws Exception {
+        List<Project> projects = new ArrayList<>();
+        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
+        List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
+        for (DemoBuilder demoBuilder : demoBuilders) {
+            demoBuilder.buildDemoApplication(adminClient);
+            projects.addAll(demoBuilder.getProjectConfigs());
+        }
+        File projectsXmlFile = prepareProjectsXmlFile(projects);
         transferFile(projectsXmlFile.getAbsolutePath(), SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
-        transferFile(sandboxSplashFile.getAbsolutePath(), SANDBOX_FOLDER);
-
-        executeSudoSsh("chmod +x " + SANDBOX_FOLDER + "/"+CHANGE_KAA_HOST);
-        executeSudoSsh("chmod +x " + SANDBOX_FOLDER + "/"+SANDBOX_SPLASH_PY);
-
-        String startAdminCommand = osType.getStartServiceTemplate().
-                replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
-        executeSudoSsh(startAdminCommand);
-
-        LOG.info("Sleeping 50 sec.");
-        Thread.sleep(50000);
 
         LOG.info("Building demo applications...");
         SandboxClient sandboxClient = new SandboxClient(DEFAULT_HOST, webAdminForwardPort);
@@ -443,6 +466,25 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         }
         LOG.info("Finished building demo applications!");
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     protected boolean isWin32() {
         return System.getProperty("os.name").startsWith("Windows");
@@ -483,7 +525,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         return output.toString();
     }
 
-    protected String executeSudoSsh(String command) {
+    protected String executeSudoSandbox(String command) {
         SandboxSshExec sshExec = createSshExec();
         sshExec.setCommand("sudo " + command);
         sshExec.setOutputproperty("sshOutProp");
@@ -491,11 +533,11 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         return sandboxProject.getProperty("sshOutProp");
     }
 
-    protected void scheduleSudoSshCommand(String command) {
+    protected void scheduleSudoSandboxCommand(String command) {
         commandsResource.addCommand("sudo " + command);
     }
 
-    protected String executeScheduledSshCommands() {
+    protected String executeScheduledSandboxCommands() {
         SandboxSshExec sshExec = createSshExec();
         sshExec.setCommandResource(commandsResource);
         sshExec.setOutputproperty("sshOutProp");
@@ -509,7 +551,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         return sshExec;
     }
 
-    private void transferAllFromDir(String dir, String to) throws IOException {
+    protected void transferAllFromDir(String dir, String to) throws IOException {
         Scp scp = createScp();
         FileSet fileSet = new FileSet();
         fileSet.setDir(new File(dir));
@@ -519,7 +561,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         scp.execute();
     }
 
-    private void transferFile(String file, String to) {
+    protected void transferFile(String file, String to) {
         Scp scp = createScp();
         scp.setLocalFile(file);
         scp.setRemoteTodir(SSH_USERNAME+"@"+DEFAULT_HOST+":"+to);
@@ -533,7 +575,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         }
         Scp scp = createScp();
         scp.setLocalTodir(LOG_DUMP_LOCATION);
-        scp.setFile(SSH_USERNAME+"@"+sshForwardPort+":/var/log/kaa/*.log");
+        scp.setFile(SSH_USERNAME + "@" + sshForwardPort + ":/var/log/kaa/*.log");
         scp.execute();
     }
 
@@ -584,4 +626,27 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         return checkSum != null ? checkSum.trim() : "";
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+    protected abstract void loadBoxImpl() throws Exception;
+    protected abstract void prepareBoxImpl() throws Exception;
+    protected abstract void startBoxImpl() throws Exception;
+    protected abstract void provisionBoxImpl() throws Exception;
+    protected abstract void unprovisionBoxImpl() throws Exception;
+    protected abstract void stopBoxImpl() throws Exception;
+    protected abstract void cleanupBoxImpl() throws Exception;
+    protected abstract void exportBoxImpl() throws Exception;
+    protected abstract void unloadBoxImpl() throws Exception;
+    protected abstract boolean boxLoaded() throws Exception;
+    protected abstract boolean boxRunning() throws Exception;
 }

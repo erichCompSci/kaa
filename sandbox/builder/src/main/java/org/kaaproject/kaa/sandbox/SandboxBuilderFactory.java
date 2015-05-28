@@ -34,6 +34,8 @@ public class SandboxBuilderFactory {
         switch (boxType) {
         case VBOX:
             return new VboxSandboxBuilder(basePath, osType, baseImageUrl, boxName, imageOutputFile, sshFowardPort, webAdminForwardPort);
+        case DOCKER:
+            return new DockerSandboxBuilder(basePath, osType, baseImageUrl, boxName, imageOutputFile, sshFowardPort, webAdminForwardPort);
             default:
                 throw new RuntimeException("Unimplemented box type: " + boxType.name());
         }

@@ -86,7 +86,7 @@ public class VboxSandboxBuilder extends AbstractSandboxBuilder {
         logger.info("Performing graceful shutdown...");
         boolean skipShutdown = false;
         try {
-            executeSudoSsh("shutdown -P now");
+            executeSudoSandbox("shutdown -P now");
         }
         catch (Exception e) {
             logger.error("Unable to connect to box! Cause: '{}'", e.getMessage());

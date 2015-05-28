@@ -18,5 +18,7 @@ package org.kaaproject.kaa.sandbox;
 public interface SandboxBuilder {
 
     void buildSandboxImage() throws Exception;
+
+
     
 }

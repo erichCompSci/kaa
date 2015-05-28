@@ -16,25 +16,33 @@
 package org.kaaproject.kaa.sandbox;
 
 public enum OsType {
-    
+
     DEBIAN("dpkg -i ${distro_path}/${package_name}.deb",
            "service ${service_name} start",
            "service ${service_name} stop"),
-    
+
+    DEBIAN_SYSTEMD("dpkg -i ${distro_path}/${package_name}.deb",
+           "systemctl start ${service_name}",
+           "systemctl stop ${service_name}"),
+
     REDHAT("rpm -Uvh --replacepkgs ${distro_path}/${package_name}.rpm",
             "service ${service_name} start",
-            "service ${service_name} stop");
-    
+            "service ${service_name} stop"),
+
+    REDHAT_SYSTEMD("rpm -Uvh --replacepkgs ${distro_path}/${package_name}.rpm",
+            "systemctl start ${service_name}",
+            "systemctl stop ${service_name}");
+
     String installPackageTemplate;
     String startServiceTemplate;
     String stopServiceTemplate;
-    
+
     OsType(String _installPackageTemplate, String _startServiceTemplate, String _stopServiceTemplate) {
         installPackageTemplate = _installPackageTemplate;
         startServiceTemplate = _startServiceTemplate;
         stopServiceTemplate = _stopServiceTemplate;
     }
-    
+
     public String getInstallPackageTemplate() {
         return installPackageTemplate;
     }
@@ -42,9 +50,9 @@ public enum OsType {
     public String getStartServiceTemplate() {
         return startServiceTemplate;
     }
-    
+
     public String getStopServiceTemplate() {
         return stopServiceTemplate;
     }
-    
+
 }
