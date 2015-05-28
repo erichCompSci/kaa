@@ -357,7 +357,41 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
 
 
 
+    protected void buildDemoApplications() throws Exception {
+        List<Project> projects = new ArrayList<>();
+        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
+        List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
+        for (DemoBuilder demoBuilder : demoBuilders) {
+            demoBuilder.buildDemoApplication(adminClient);
+            projects.addAll(demoBuilder.getProjectConfigs());
+        }
+        File projectsXmlFile = prepareProjectsXmlFile(projects);
+        transferFile(projectsXmlFile.getAbsolutePath(), SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
 
+        LOG.info("Building demo applications...");
+        SandboxClient sandboxClient = new SandboxClient(DEFAULT_HOST, webAdminForwardPort);
+
+        List<Project> sandboxProjects = sandboxClient.getDemoProjects();
+        if (projects.size() != sandboxProjects.size()) {
+            LOG.error("Demo projects count mismatch, expected {}, actual {}", projects.size(), sandboxProjects.size());
+            throw new RuntimeException("Demo projects count mismatch!");
+        }
+        for (Project sandboxProject : sandboxProjects) {
+            if (sandboxProject.getDestBinaryFile() != null &&
+                    sandboxProject.getDestBinaryFile().length()>0) {
+                LOG.info("[{}][{}] Building Demo Project...", sandboxProject.getPlatform(), sandboxProject.getName());
+                String output = sandboxClient.buildProjectBinary(sandboxProject.getId());
+                LOG.info("[{}][{}] Build output:\n{}", sandboxProject.getPlatform(), sandboxProject.getName(), output);
+                if (!sandboxClient.isProjectBinaryDataExists(sandboxProject.getId())) {
+                    LOG.error("Failed to build demo project '{}'", sandboxProject.getName());
+                    throw new RuntimeException("Failed to build demo project '" + sandboxProject.getName() + "'!");
+                }
+            } else {
+                LOG.info("[{}][{}] Skipping Demo Project build...", sandboxProject.getPlatform(), sandboxProject.getName());
+            }
+        }
+        LOG.info("Finished building demo applications!");
+    }
 
 
     protected File prepareChangeKaaHostFile() throws IOException {
@@ -430,42 +464,6 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
     }
 
 
-
-    protected void buildDemoApplications() throws Exception {
-        List<Project> projects = new ArrayList<>();
-        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
-        List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
-        for (DemoBuilder demoBuilder : demoBuilders) {
-            demoBuilder.buildDemoApplication(adminClient);
-            projects.addAll(demoBuilder.getProjectConfigs());
-        }
-        File projectsXmlFile = prepareProjectsXmlFile(projects);
-        transferFile(projectsXmlFile.getAbsolutePath(), SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
-
-        LOG.info("Building demo applications...");
-        SandboxClient sandboxClient = new SandboxClient(DEFAULT_HOST, webAdminForwardPort);
-
-        List<Project> sandboxProjects = sandboxClient.getDemoProjects();
-        if (projects.size() != sandboxProjects.size()) {
-            LOG.error("Demo projects count mismatch, expected {}, actual {}", projects.size(), sandboxProjects.size());
-            throw new RuntimeException("Demo projects count mismatch!");
-        }
-        for (Project sandboxProject : sandboxProjects) {
-            if (sandboxProject.getDestBinaryFile() != null &&
-                    sandboxProject.getDestBinaryFile().length()>0) {
-                LOG.info("[{}][{}] Building Demo Project...", sandboxProject.getPlatform(), sandboxProject.getName());
-                String output = sandboxClient.buildProjectBinary(sandboxProject.getId());
-                LOG.info("[{}][{}] Build output:\n{}", sandboxProject.getPlatform(), sandboxProject.getName(), output);
-                if (!sandboxClient.isProjectBinaryDataExists(sandboxProject.getId())) {
-                    LOG.error("Failed to build demo project '{}'", sandboxProject.getName());
-                    throw new RuntimeException("Failed to build demo project '" + sandboxProject.getName() + "'!");
-                }
-            } else {
-                LOG.info("[{}][{}] Skipping Demo Project build...", sandboxProject.getPlatform(), sandboxProject.getName());
-            }
-        }
-        LOG.info("Finished building demo applications!");
-    }
 
 
 
