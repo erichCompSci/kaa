@@ -58,6 +58,7 @@ import org.apache.tools.ant.types.FileSet;
 import org.kaaproject.kaa.sandbox.demo.AbstractDemoBuilder;
 import org.kaaproject.kaa.sandbox.demo.DemoBuilder;
 import org.kaaproject.kaa.sandbox.demo.DemoBuildersRegistry;
+import org.kaaproject.kaa.sandbox.demo.projects.DockerfileRestGenerator;
 import org.kaaproject.kaa.sandbox.demo.projects.Project;
 import org.kaaproject.kaa.sandbox.demo.projects.ProjectsConfig;
 import org.kaaproject.kaa.sandbox.rest.SandboxClient;
@@ -357,7 +358,7 @@ public abstract class AbstractSandboxBuilder implements SandboxBuilder, SandboxC
         fos.close();
 
         //Load demo data via REST API
-        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
+        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort, new DockerfileRestGenerator());
         List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
         List<Project> projects = new ArrayList<>();
         for (DemoBuilder demoBuilder : demoBuilders) {
