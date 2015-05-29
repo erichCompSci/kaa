@@ -3,19 +3,13 @@ package org.kaaproject.kaa.sandbox;
 
 import org.apache.commons.lang.StringUtils;
 import org.kaaproject.kaa.sandbox.demo.AbstractDemoBuilder;
-import org.kaaproject.kaa.sandbox.demo.projects.Project;
-import org.kaaproject.kaa.sandbox.demo.projects.ProjectsConfig;
 import org.kaaproject.kaa.server.common.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, SandboxConstants {
 
@@ -25,13 +19,24 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     protected final OsType osType;
     protected final File basePath;
 
+    protected final String boxName;
+    protected final int sshForwardPort;
+    protected final int webAdminForwardPort;
 
     protected File distroPath;
     protected File demoProjectsPath;
 
-    protected VeryAbstractSandboxBuilder() {
-        osType = null;
-        basePath = null;
+
+    protected VeryAbstractSandboxBuilder(File basePath,
+                                         OsType osType,
+                                         String boxName,
+                                         int sshForwardPort,
+                                         int webAdminForwardPort) {
+        this.basePath = basePath;
+        this.osType = osType;
+        this.boxName = boxName;
+        this.sshForwardPort = sshForwardPort;
+        this.webAdminForwardPort = webAdminForwardPort;
     }
 
 
@@ -49,8 +54,6 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
             cleanUp();
         }
     }
-
-
 
 
     protected void schedulePackagesInstall() {
@@ -103,8 +106,10 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         buildDemoApplications();
     }
 
+    protected abstract void buildDemoApplications() throws Exception;
+
     private void provisionBox() throws Exception {
-//        provisionBoxImpl();
+        provisionBoxImpl();
         scheduleSudoSandboxCommand("rm -rf " + "/" + SHARED_FOLDER);
         scheduleSudoSandboxCommand("mkdir -p " + "/" + SHARED_FOLDER);
         scheduleSudoSandboxCommand("mkdir -p " + SANDBOX_FOLDER);
@@ -117,7 +122,9 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         LOG.info("Sandbox data transfered");
     }
 
+
     private void unprovisionBox() throws Exception {
+        unprovisionBoxImpl();
         executeSudoSandboxCommand("rm -rf " + "/" + SHARED_FOLDER);
     }
 
@@ -190,18 +197,6 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     }
 
 
-    protected File prepareProjectsXmlFile(List<Project> projects) throws JAXBException {
-        File projectsXmlFile = new File(demoProjectsPath, DEMO_PROJECTS_XML);
-        ProjectsConfig projectsConfig = new ProjectsConfig();
-        projectsConfig.getProjects().addAll(projects);
-
-        JAXBContext jc = JAXBContext.newInstance("org.kaaproject.kaa.sandbox.demo.projects");
-        Marshaller marshaller = jc.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        marshaller.marshal(projectsConfig, projectsXmlFile);
-        return projectsXmlFile;
-    }
-
     abstract protected void preBuild() throws Exception;
 
     abstract protected void postBuild() throws Exception;
@@ -221,4 +216,8 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     abstract protected void transferFile(String file, String to);
 
     abstract protected void waitForLongRunningTask(long seconds);
+
+    protected abstract void provisionBoxImpl() throws Exception;
+
+    protected abstract void unprovisionBoxImpl() throws Exception;
 }

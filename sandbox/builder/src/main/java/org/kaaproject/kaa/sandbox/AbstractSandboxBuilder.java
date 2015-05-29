@@ -16,11 +16,9 @@
 package org.kaaproject.kaa.sandbox;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.taskdefs.optional.ssh.SSHBase;
 import org.apache.tools.ant.taskdefs.optional.ssh.Scp;
 import org.apache.tools.ant.types.FileSet;
-import org.kaaproject.kaa.sandbox.demo.AbstractDemoBuilder;
 import org.kaaproject.kaa.sandbox.demo.DemoBuilder;
 import org.kaaproject.kaa.sandbox.demo.DemoBuildersRegistry;
 import org.kaaproject.kaa.sandbox.demo.projects.Project;
@@ -28,7 +26,6 @@ import org.kaaproject.kaa.sandbox.demo.projects.ProjectsConfig;
 import org.kaaproject.kaa.sandbox.rest.SandboxClient;
 import org.kaaproject.kaa.sandbox.ssh.SandboxSshExec;
 import org.kaaproject.kaa.server.common.admin.AdminClient;
-import org.kaaproject.kaa.server.common.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,12 +43,8 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSandboxBuilder.class);
 
 
-    protected final OsType osType;
     protected final URL baseImageUrl;
-    protected final String boxName;
     protected final File imageOutputFile;
-    protected final int sshForwardPort;
-    protected final int webAdminForwardPort;
 
 
     protected File baseImageFile;
@@ -60,20 +53,16 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
     private SandboxProject sandboxProject = new SandboxProject();
 
     public AbstractSandboxBuilder(File basePath,
-            OsType osType,
-            URL baseImageUrl,
-            String boxName,
-            File imageOutputFile,
-            int sshForwardPort,
-            int webAdminForwardPort) {
+                                  OsType osType,
+                                  URL baseImageUrl,
+                                  String boxName,
+                                  File imageOutputFile,
+                                  int sshForwardPort,
+                                  int webAdminForwardPort) {
 
-        this.basePath = basePath;
-        this.osType = osType;
+        super(basePath, osType, boxName, sshForwardPort, webAdminForwardPort);
         this.baseImageUrl = baseImageUrl;
-        this.boxName = boxName;
         this.imageOutputFile = imageOutputFile;
-        this.sshForwardPort = sshForwardPort;
-        this.webAdminForwardPort = webAdminForwardPort;
         this.distroPath = new File(basePath, "distro");
         this.demoProjectsPath = new File(basePath, "demo_projects");
     }
@@ -91,8 +80,6 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         cleanupBox();
         exportBox();
     }
-
-
 
 
     @Override
@@ -141,13 +128,6 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         LOG.info("Box '{}' is started.", boxName);
     }
 
-
-
-    private void unprovisionBox() throws Exception {
-        executeSudoSandboxCommand("rm -rf " + "/" + SHARED_FOLDER);
-        unprovisionBoxImpl();
-    }
-
     private void stopBox() throws Exception {
         LOG.info("Stopping box '{}' ...", boxName);
         stopBoxImpl();
@@ -167,7 +147,7 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
                 LOG.error("Unable to delete previous output image file '{}'", imageOutputFile.getAbsoluteFile());
                 throw new RuntimeException("Failed to export sandbox image!");
             }
-        } else if (!imageOutputFile.getParentFile().exists()){
+        } else if (!imageOutputFile.getParentFile().exists()) {
             imageOutputFile.getParentFile().mkdirs();
         }
         exportBoxImpl();
@@ -179,12 +159,6 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         unloadBoxImpl();
         LOG.info("Box '{}' was unloaded.", boxName);
     }
-
-
-
-
-
-
 
 
     protected void buildDemoApplications() throws Exception {
@@ -208,7 +182,7 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         }
         for (Project sandboxProject : sandboxProjects) {
             if (sandboxProject.getDestBinaryFile() != null &&
-                    sandboxProject.getDestBinaryFile().length()>0) {
+                    sandboxProject.getDestBinaryFile().length() > 0) {
                 LOG.info("[{}][{}] Building Demo Project...", sandboxProject.getPlatform(), sandboxProject.getName());
                 String output = sandboxClient.buildProjectBinary(sandboxProject.getId());
                 LOG.info("[{}][{}] Build output:\n{}", sandboxProject.getPlatform(), sandboxProject.getName(), output);
@@ -223,30 +197,23 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         LOG.info("Finished building demo applications!");
     }
 
+    protected File prepareProjectsXmlFile(List<Project> projects) throws JAXBException {
+        File projectsXmlFile = new File(demoProjectsPath, DEMO_PROJECTS_XML);
+        ProjectsConfig projectsConfig = new ProjectsConfig();
+        projectsConfig.getProjects().addAll(projects);
+
+        JAXBContext jc = JAXBContext.newInstance("org.kaaproject.kaa.sandbox.demo.projects");
+        Marshaller marshaller = jc.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        marshaller.marshal(projectsConfig, projectsXmlFile);
+        return projectsXmlFile;
+    }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    protected void waitForLongRunningTask(long seconds){
+    protected void waitForLongRunningTask(long seconds) {
         LOG.info("Sleeping {} sec.", seconds);
         try {
-            Thread.sleep(seconds*1000);
+            Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -319,26 +286,26 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         return sshExec;
     }
 
-    protected void transferAllFromDir(String dir, String to){
+    protected void transferAllFromDir(String dir, String to) {
         Scp scp = createScp();
         FileSet fileSet = new FileSet();
         fileSet.setDir(new File(dir));
         fileSet.setIncludes("**/*");
         scp.addFileset(fileSet);
-        scp.setRemoteTodir(SSH_USERNAME+"@"+DEFAULT_HOST+":"+to);
+        scp.setRemoteTodir(SSH_USERNAME + "@" + DEFAULT_HOST + ":" + to);
         scp.execute();
     }
 
     protected void transferFile(String file, String to) {
         Scp scp = createScp();
         scp.setLocalFile(file);
-        scp.setRemoteTodir(SSH_USERNAME+"@"+DEFAULT_HOST+":"+to);
+        scp.setRemoteTodir(SSH_USERNAME + "@" + DEFAULT_HOST + ":" + to);
         scp.execute();
     }
 
-    private void dumpLogs(){
-        File dumpedLogsFolder  = new File(LOG_DUMP_LOCATION);
-        if(!dumpedLogsFolder.exists()){
+    private void dumpLogs() {
+        File dumpedLogsFolder = new File(LOG_DUMP_LOCATION);
+        if (!dumpedLogsFolder.exists()) {
             dumpedLogsFolder.mkdirs();
         }
         Scp scp = createScp();
@@ -363,27 +330,21 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     protected abstract void loadBoxImpl() throws Exception;
+
     protected abstract void prepareBoxImpl() throws Exception;
+
     protected abstract void startBoxImpl() throws Exception;
-    protected abstract void provisionBoxImpl() throws Exception;
-    protected abstract void unprovisionBoxImpl() throws Exception;
+
     protected abstract void stopBoxImpl() throws Exception;
+
     protected abstract void cleanupBoxImpl() throws Exception;
+
     protected abstract void exportBoxImpl() throws Exception;
+
     protected abstract void unloadBoxImpl() throws Exception;
+
     protected abstract boolean boxLoaded() throws Exception;
+
     protected abstract boolean boxRunning() throws Exception;
 }
