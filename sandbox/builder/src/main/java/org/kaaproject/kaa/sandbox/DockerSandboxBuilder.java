@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedList;
 
-public class DockerSandboxBuilder extends AbstractSandboxBuilder {
+public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
 
     public static void main(String[] args) {
@@ -20,13 +20,11 @@ public class DockerSandboxBuilder extends AbstractSandboxBuilder {
 
     LinkedList<String> dockerCommands = new LinkedList<>();
 
-    public DockerSandboxBuilder(File basePath, OsType osType, URL baseImageUrl, String boxName, File imageOutputFile, int sshForwardPort, int webAdminForwardPort) {
-        super(basePath, osType, baseImageUrl, boxName, imageOutputFile, sshForwardPort, webAdminForwardPort);
-    }
+
 
 
     @Override
-    protected void sleepForSeconds(long seconds) {
+    protected void waitForLongRunningTask(long seconds) {
         dockerCommands.add("RUN su -c 'sleep "+seconds+";'");
         System.out.println(dockerCommands.getLast());
     }
@@ -36,6 +34,26 @@ public class DockerSandboxBuilder extends AbstractSandboxBuilder {
         dockerCommands.add("RUN " + command);
         System.out.println(dockerCommands.getLast());
         return "";
+    }
+
+    @Override
+    void onBuildFailure() {
+
+    }
+
+    @Override
+    protected void build() throws Exception {
+
+    }
+
+    @Override
+    protected void preBuild() throws Exception {
+
+    }
+
+    @Override
+    protected void postBuild() throws Exception {
+
     }
 
     @Override
@@ -65,64 +83,4 @@ public class DockerSandboxBuilder extends AbstractSandboxBuilder {
 
 
 
-
-
-
-
-
-    @Override
-    protected String executeScheduledSandboxCommands() {
-        return "";
-    }
-
-    @Override
-    protected void loadBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void prepareBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void startBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void provisionBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void unprovisionBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void stopBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void cleanupBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void exportBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected void unloadBoxImpl() throws Exception {
-    }
-
-    @Override
-    protected boolean boxLoaded() throws Exception {
-        return false;
-    }
-
-    @Override
-    protected boolean boxRunning() throws Exception {
-        return false;
-    }
-
-    @Override
-    protected void loadBox() throws Exception {
-
-    }
 }
