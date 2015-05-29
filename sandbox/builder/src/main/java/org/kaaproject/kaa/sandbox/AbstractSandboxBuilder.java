@@ -63,8 +63,6 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         super(basePath, osType, boxName, sshForwardPort, webAdminForwardPort);
         this.baseImageUrl = baseImageUrl;
         this.imageOutputFile = imageOutputFile;
-        this.distroPath = new File(basePath, "distro");
-        this.demoProjectsPath = new File(basePath, "demo_projects");
     }
 
     @Override
@@ -161,7 +159,9 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
     }
 
 
-    protected void buildDemoApplications() throws Exception {
+ /*
+ protected void buildSandboxMeta() throws Exception {
+
         List<Project> projects = new ArrayList<>();
         AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
         List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
@@ -169,6 +169,8 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
             demoBuilder.buildDemoApplication(adminClient);
             projects.addAll(demoBuilder.getProjectConfigs());
         }
+
+
         File projectsXmlFile = prepareProjectsXmlFile(projects);
         transferFile(projectsXmlFile.getAbsolutePath(), SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
 
@@ -207,7 +209,7 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
         marshaller.marshal(projectsConfig, projectsXmlFile);
         return projectsXmlFile;
-    }
+    }*/
 
 
     protected void waitForLongRunningTask(long seconds) {

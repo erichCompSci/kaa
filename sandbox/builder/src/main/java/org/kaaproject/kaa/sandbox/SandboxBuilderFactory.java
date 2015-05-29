@@ -18,6 +18,7 @@ package org.kaaproject.kaa.sandbox;
 import java.io.File;
 import java.net.URL;
 
+import org.kaaproject.kaa.sandbox.docker.DockerSandboxBuilder;
 import org.kaaproject.kaa.sandbox.vbox.VboxSandboxBuilder;
 
 public class SandboxBuilderFactory {

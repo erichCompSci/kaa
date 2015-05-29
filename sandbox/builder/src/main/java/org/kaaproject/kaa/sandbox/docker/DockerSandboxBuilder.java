@@ -1,12 +1,13 @@
-package org.kaaproject.kaa.sandbox;
+package org.kaaproject.kaa.sandbox.docker;
 
 
+import org.kaaproject.kaa.sandbox.OsType;
+import org.kaaproject.kaa.sandbox.SandboxMetaBuilder;
+import org.kaaproject.kaa.sandbox.VeryAbstractSandboxBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.LinkedList;
 
 public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
@@ -14,26 +15,16 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerSandboxBuilder.class);
 
-//    public static void main(String[] args) {
-//        DockerSandboxBuilder dockerSandboxBuilder = new AbstractSandboxBuilder(new File("/home/sercv/kaa/sandbox/builder/target/sandbox"),OsType.DEBIAN,null,"anem", null, 22, 8080);
-//        try {
-//            dockerSandboxBuilder.buildSandboxImage();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     LinkedList<String> dockerCommands = new LinkedList<>();
 
-    protected DockerSandboxBuilder(File basePath, OsType osType) {
-        super(basePath, osType);
+    protected DockerSandboxBuilder(File basePath,
+                                   OsType osType,
+                                   String boxName,
+                                   int sshForwardPort,
+                                   int webAdminForwardPort) {
+        super(basePath, osType, boxName, sshForwardPort, webAdminForwardPort);
     }
 
-
-    @Override
-    protected void buildDemoApplications() throws Exception {
-        executeSudoSandboxCommand("RUN java -jar ApplicationDemoBuilder");
-    }
 
     @Override
     protected void waitForLongRunningTask(long seconds) {
@@ -51,16 +42,11 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     }
 
-
     @Override
     protected String executeScheduledSandboxCommands() {
         return null;
     }
 
-    @Override
-    protected String executeSudoSandboxCommand(String command) {
-        return null;
-    }
 
 
     @Override
@@ -81,6 +67,15 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
     @Override
     protected void onBuildFailure() {
 
+    }
+
+
+
+    @Override
+    protected String executeSudoSandboxCommand(String command) {
+        dockerCommands.add("RUN " + command);
+        System.out.println(dockerCommands.getLast());
+        return null;
     }
 
     @Override

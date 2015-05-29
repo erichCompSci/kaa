@@ -37,6 +37,8 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         this.boxName = boxName;
         this.sshForwardPort = sshForwardPort;
         this.webAdminForwardPort = webAdminForwardPort;
+        this.distroPath = new File(basePath, "distro");
+        this.demoProjectsPath = new File(basePath, "demo_projects");
     }
 
 
@@ -101,12 +103,17 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         String startAdminCommand = osType.getStartServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
         executeSudoSandboxCommand(startAdminCommand);
 
+
         waitForLongRunningTask(50);
 
-        buildDemoApplications();
+        buildSandboxMeta(SANDBOX_FOLDER + "/" + DEMO_PROJECTS +"/"+ DEMO_PROJECTS_XML);
+        waitForLongRunningTask(20);
     }
 
-    protected abstract void buildDemoApplications() throws Exception;
+    protected void buildSandboxMeta(String demoProjectsXML) throws Exception{
+        transferFile("","");
+        executeSudoSandboxCommand("java -jar "+SandboxMetaBuilder.class.getSimpleName()+"jar");
+    };
 
     private void provisionBox() throws Exception {
         provisionBoxImpl();
@@ -133,9 +140,9 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         schedulePackagesInstall();
         scheduleServicesStart();
         executeScheduledSandboxCommands();
+        //wait for services deploy
         waitForLongRunningTask(80);
         initBoxData();
-        waitForLongRunningTask(20);
         unprovisionBox();
     }
 
