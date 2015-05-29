@@ -73,13 +73,6 @@ public class AdminClient {
 
     private String url;
 
-    public AdminClient(String host, int port, RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-        ClientHttpRequestFactory requestFactory = new HttpComponentsRequestFactoryBasicAuth(new HttpHost(host, port, "http"));
-        restTemplate.setRequestFactory(requestFactory);
-        url = "http://"+host+":"+port + "/kaaAdmin/rest/api/";
-    }
-
     public AdminClient(String host, int port) {
         restTemplate = new RestTemplate();
         ClientHttpRequestFactory requestFactory = new HttpComponentsRequestFactoryBasicAuth(new HttpHost(host, port, "http"));

@@ -111,8 +111,8 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     }
 
     protected void buildSandboxMeta(String demoProjectsXML) throws Exception{
-        transferFile("","");
-        executeSudoSandboxCommand("java -jar "+SandboxMetaBuilder.class.getSimpleName()+"jar");
+        transferFile(basePath.getAbsolutePath()+"/meta-builder/meta-builder.jar","/");
+        executeSudoSandboxCommand("java -jar meta-builder.jar");
     };
 
     private void provisionBox() throws Exception {

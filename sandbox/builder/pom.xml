@@ -17,6 +17,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <modules>
+        <!--<module>meta-builder</module>-->
+    </modules>
     <parent>
         <groupId>org.kaaproject.kaa</groupId>
         <version>0.7.1-SNAPSHOT</version>
@@ -381,6 +384,39 @@
                             <arguments>
                                 <argument>${base.path}</argument>
                                 <argument>vbox</argument>
+                                <argument>debian</argument>
+                                <argument>${ubuntu.image.url}</argument>
+                                <argument>${ubuntu.image.name}</argument>
+                                <argument>${ubuntu.sandbox.file}</argument>
+                                <argument>${ssh.forward.port}</argument>
+                                <argument>${web.admin.forward.port}</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>build-docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>org.kaaproject.kaa.sandbox.SandboxMain</mainClass>
+                            <arguments>
+                                <argument>${base.path}</argument>
+                                <argument>docker</argument>
                                 <argument>debian</argument>
                                 <argument>${ubuntu.image.url}</argument>
                                 <argument>${ubuntu.image.name}</argument>

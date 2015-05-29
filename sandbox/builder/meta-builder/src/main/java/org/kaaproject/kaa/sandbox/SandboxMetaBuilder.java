@@ -21,9 +21,26 @@ public class SandboxMetaBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(SandboxMetaBuilder.class);
 
 
+    public static void main(String[] args) throws Exception {
+        SandboxMetaBuilder builder = new SandboxMetaBuilder(args[0],Integer.valueOf(args[1]),args[2]);
+        builder.buildSandboxMeta();
+    }
+
 //    SANDBOX_FOLDER + "/" + DEMO_PROJECTS +"/"+ DEMO_PROJECTS_XML
 
-    public static void buildSandboxMeta(String host, int webAdminForwardPort, String projectsXmlFileLocation) throws Exception {
+
+    private String host;
+    private int webAdminForwardPort;
+    private String projectsXmlFileLocation;
+
+    SandboxMetaBuilder (String host, int webAdminForwardPort, String projectsXmlFileLocation){
+        this.host = host;
+        this.webAdminForwardPort =  webAdminForwardPort;
+        this.projectsXmlFileLocation = projectsXmlFileLocation ;
+    }
+
+
+    public void buildSandboxMeta() throws Exception {
 
         List<Project> projects = new ArrayList<>();
         AdminClient adminClient = new AdminClient(host, webAdminForwardPort);
@@ -32,7 +49,6 @@ public class SandboxMetaBuilder {
             demoBuilder.buildDemoApplication(adminClient);
             projects.addAll(demoBuilder.getProjectConfigs());
         }
-
 
         prepareProjectsXmlFile(projects, projectsXmlFileLocation);
 
@@ -62,7 +78,7 @@ public class SandboxMetaBuilder {
         LOG.info("Finished building demo applications!");
     }
 
-    private static File prepareProjectsXmlFile(List<Project> projects, String projectsXmlFileLocation) throws JAXBException {
+    private File prepareProjectsXmlFile(List<Project> projects, String projectsXmlFileLocation) throws JAXBException {
         File projectsXmlFile = new File(projectsXmlFileLocation);
         ProjectsConfig projectsConfig = new ProjectsConfig();
         projectsConfig.getProjects().addAll(projects);
