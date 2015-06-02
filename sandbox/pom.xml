@@ -35,6 +35,7 @@
 	</properties>
 	
 	<modules>
+		<module>meta-builder</module>
 		<module>demo</module>
 		<module>web</module>
 		<module>builder</module>

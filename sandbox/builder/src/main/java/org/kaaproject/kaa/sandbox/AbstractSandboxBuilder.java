@@ -19,22 +19,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.tools.ant.taskdefs.optional.ssh.SSHBase;
 import org.apache.tools.ant.taskdefs.optional.ssh.Scp;
 import org.apache.tools.ant.types.FileSet;
-import org.kaaproject.kaa.sandbox.demo.DemoBuilder;
-import org.kaaproject.kaa.sandbox.demo.DemoBuildersRegistry;
-import org.kaaproject.kaa.sandbox.demo.projects.Project;
-import org.kaaproject.kaa.sandbox.demo.projects.ProjectsConfig;
-import org.kaaproject.kaa.sandbox.rest.SandboxClient;
 import org.kaaproject.kaa.sandbox.ssh.SandboxSshExec;
-import org.kaaproject.kaa.server.common.admin.AdminClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -93,7 +83,8 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
 
     @Override
     protected void onBuildFailure() {
-        dumpLogs();
+        LOG.info("build failed");
+//        dumpLogs();
     }
 
     protected void loadBox() throws Exception {
