@@ -39,7 +39,7 @@
         <ubuntu.image.name>Kaa Sandbox Ubuntu 64 bit</ubuntu.image.name>
         <ubuntu.sandbox.file>${base.path}/kaa-sandbox-ubuntu-64bit.ova</ubuntu.sandbox.file>
         <ssh.forward.port>10022</ssh.forward.port>
-        <web.admin.forward.port>8899</web.admin.forward.port>
+        <web.admin.forward.port>8080</web.admin.forward.port>
     </properties>
 
     <dependencies>

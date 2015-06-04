@@ -41,7 +41,7 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     @Override
     protected void unprovisionBoxImpl() throws Exception {
-        try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/home/sercv/SandBoxDockerFile", true)))) {
+        try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/home/sercv/SandBoxDockerFile")))) {
             for(String instruction: dockerInstructions)
             out.println(instruction);
         }catch (IOException e) {

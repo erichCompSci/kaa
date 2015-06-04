@@ -53,7 +53,7 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
             onBuildFailure();
             throw e;
         } finally {
-            cleanUp();
+//            cleanUp();
         }
     }
 
@@ -67,12 +67,13 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         }
     }
 
-    protected void scheduleServicesStart() {
+    protected String scheduleServicesStartCommand() {
+        String command = "";
         for (KaaPackage kaaPackage : KaaPackage.values()) {
-            String command = osType.getStartServiceTemplate().
-                    replaceAll(SERVICE_NAME_VAR, kaaPackage.getServiceName());
-            scheduleSudoSandboxCommand(command);
+            command += "sudo "+osType.getStartServiceTemplate().
+                    replaceAll(SERVICE_NAME_VAR, kaaPackage.getServiceName())+"; ";
         }
+        return command;
     }
 
 
@@ -87,8 +88,6 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         scheduleSudoSandboxCommand("chown -R " + SSH_USERNAME + ":" + SSH_USERNAME + " " + ADMIN_FOLDER + "/webapps");
         scheduleSudoSandboxCommand("sed -i \"s/\\(tenant_developer_user=\\).*\\$/\\1" + AbstractDemoBuilder.tenantDeveloperUser + "/\" " + ADMIN_FOLDER + "/conf/sandbox-server.properties");
         scheduleSudoSandboxCommand("sed -i \"s/\\(tenant_developer_password=\\).*\\$/\\1" + AbstractDemoBuilder.tenantDeveloperPassword + "/\" " + ADMIN_FOLDER + "/conf/sandbox-server.properties");
-        String stopAdminCommand = osType.getStopServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
-        scheduleSudoSandboxCommand(stopAdminCommand);
         executeScheduledSandboxCommands();
 
 
@@ -100,19 +99,20 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
 
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
-        String startAdminCommand = osType.getStartServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName());
-        executeSudoSandboxCommand(startAdminCommand);
 
 
-        waitForLongRunningTask(50);
+//        String restartAdminCommand = "sudo "+osType.getStartServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName()).replaceFirst("start","restart");
 
-        buildSandboxMeta(SANDBOX_FOLDER + "/" + DEMO_PROJECTS +"/"+ DEMO_PROJECTS_XML);
-        waitForLongRunningTask(20);
+        buildSandboxMeta(SANDBOX_FOLDER + "/" + DEMO_PROJECTS +"/"+ DEMO_PROJECTS_XML,scheduleServicesStartCommand());
+
+//        waitForLongRunningTask(20);
     }
 
-    protected void buildSandboxMeta(String demoProjectsXML) throws Exception{
-        transferFile(basePath.getAbsolutePath()+"/../../../meta-builder/target/meta-builder.jar",SANDBOX_FOLDER);
-        executeSudoSandboxCommand("java -jar "+SANDBOX_FOLDER+"/meta-builder.jar "+DEFAULT_HOST+" "+webAdminForwardPort+" "+ demoProjectsXML);
+    protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception{
+        LOG.info("BUILDING SANDBOX META...");
+        transferFile(basePath.getAbsolutePath() + "/../../../meta-builder/target/meta-builder.jar", SANDBOX_FOLDER);
+        executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + DEFAULT_HOST + " " + webAdminForwardPort + " " + demoProjectsXML + " '" + startServicesCommand + "'");
+        LOG.info("SANDBOX META BUILD FINISHED");
     };
 
     private void provisionBox() throws Exception {
@@ -138,10 +138,10 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     protected void build() throws Exception {
         provisionBox();
         schedulePackagesInstall();
-        scheduleServicesStart();
+//        scheduleServicesStart();
         executeScheduledSandboxCommands();
         //wait for services deploy
-        waitForLongRunningTask(80);
+        waitForLongRunningTask(40);
         initBoxData();
         unprovisionBox();
     }
