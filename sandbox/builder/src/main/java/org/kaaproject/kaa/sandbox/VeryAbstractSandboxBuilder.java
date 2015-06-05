@@ -67,14 +67,7 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         }
     }
 
-    protected String scheduleServicesStartCommand() {
-        String command = "";
-        for (KaaPackage kaaPackage : KaaPackage.values()) {
-            command += "sudo "+osType.getStartServiceTemplate().
-                    replaceAll(SERVICE_NAME_VAR, kaaPackage.getServiceName())+"; ";
-        }
-        return command;
-    }
+
 
 
     protected void initBoxData() throws Exception {
@@ -103,7 +96,7 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
 
 //        String restartAdminCommand = "sudo "+osType.getStartServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName()).replaceFirst("start","restart");
 
-        buildSandboxMeta(SANDBOX_FOLDER + "/" + DEMO_PROJECTS +"/"+ DEMO_PROJECTS_XML,scheduleServicesStartCommand());
+        buildSandboxMeta("xml", "command");
 
 //        waitForLongRunningTask(20);
     }
@@ -111,7 +104,8 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception{
         LOG.info("BUILDING SANDBOX META...");
         transferFile(basePath.getAbsolutePath() + "/../../../meta-builder/target/meta-builder.jar", SANDBOX_FOLDER);
-        executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + DEFAULT_HOST + " " + webAdminForwardPort + " " + demoProjectsXML + " '" + startServicesCommand + "'");
+        String meta = executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + DEFAULT_HOST + " " + webAdminForwardPort + " " + demoProjectsXML + " '" + startServicesCommand + "'");
+        LOG.info(meta);
         LOG.info("SANDBOX META BUILD FINISHED");
     };
 
