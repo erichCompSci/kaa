@@ -91,6 +91,11 @@
             <artifactId>admin-rest-client</artifactId>
             <version>0.7.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.kaaproject.kaa.sandbox</groupId>
+            <artifactId>meta-builder</artifactId>
+            <version>0.7.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -135,6 +140,14 @@
                         </goals>
                         <configuration>
                             <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.kaaproject.kaa.sandbox</groupId>
+                                    <artifactId>meta-builder</artifactId>
+                                    <version>${project.version}</version>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${base.path}</outputDirectory>
+                                    <destFileName>meta-builder.jar</destFileName>
+                                </artifactItem>
                                 <artifactItem>
                                     <groupId>org.kaaproject.kaa.server</groupId>
                                     <artifactId>control</artifactId>

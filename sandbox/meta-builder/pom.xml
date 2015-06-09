@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>org.kaaproject.kaa.sandbox</groupId>
-            <artifactId>sandbox-builder</artifactId>
+            <artifactId>sandbox-demo</artifactId>
             <version>0.7.1-SNAPSHOT</version>
         </dependency>
         <dependency>

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -68,8 +69,6 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     }
 
 
-
-
     protected void initBoxData() throws Exception {
 
         scheduleSudoSandboxCommand("rm -rf " + SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
@@ -94,17 +93,13 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
 
 
-//        String restartAdminCommand = "sudo "+osType.getStartServiceTemplate().replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName()).replaceFirst("start","restart");
-
         buildSandboxMeta("xml", "command");
 
-//        waitForLongRunningTask(20);
     }
 
     protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception{
         LOG.info("BUILDING SANDBOX META...");
-        transferFile(basePath.getAbsolutePath() + "/../../../meta-builder/target/meta-builder.jar", SANDBOX_FOLDER);
-        String meta = executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + DEFAULT_HOST + " " + webAdminForwardPort + " " + demoProjectsXML + " '" + startServicesCommand + "'");
+        String meta = executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + webAdminForwardPort);
         LOG.info(meta);
         LOG.info("SANDBOX META BUILD FINISHED");
     };
@@ -132,7 +127,6 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     protected void build() throws Exception {
         provisionBox();
         schedulePackagesInstall();
-//        scheduleServicesStart();
         executeScheduledSandboxCommands();
         //wait for services deploy
         waitForLongRunningTask(40);
@@ -212,9 +206,9 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
 
     abstract protected void scheduleSudoSandboxCommand(String command);
 
-    abstract protected void transferAllFromDir(String dir, String to);
+    abstract protected void transferAllFromDir(String dir, String to) throws IOException;
 
-    abstract protected void transferFile(String file, String to);
+    abstract protected void transferFile(String file, String to) throws IOException;
 
     abstract protected void waitForLongRunningTask(long seconds);
 

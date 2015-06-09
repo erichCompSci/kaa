@@ -14,6 +14,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -21,25 +22,18 @@ import java.util.List;
 
 public class SandboxMetaBuilder implements SandboxConstants {
 
-    private OsType osType = OsType.DEBIAN;
-
     private static final Logger LOG = LoggerFactory.getLogger(SandboxMetaBuilder.class);
 
-    private String command;
+    private OsType osType = OsType.DEBIAN;
+
+    private String[] sandboxServices = {"zookeeper", "postgresql", "mongodb"};
 
 
-    private String[] sandboxServices = {"zookeeper", "postgresql", "mongodb"};//  , "kaa_box_startup"};
-
-    public static void main(String[] args) throws Exception {
-        SandboxMetaBuilder builder = new SandboxMetaBuilder(args[0], Integer.valueOf(args[1]), args[2], args[3]);
-        builder.buildSandboxMeta();
+    SandboxMetaBuilder(int webAdminForwardPort) {
+        this.webAdminForwardPort = webAdminForwardPort;
     }
 
-
-    //    private String host;
     private int webAdminForwardPort;
-//    private String projectsXmlFileLocation;
-
 
     protected List<String> prepareServicesStartCommands() {
         LinkedList<String> servicesStartCommands = new LinkedList<>();
@@ -54,24 +48,16 @@ public class SandboxMetaBuilder implements SandboxConstants {
         return servicesStartCommands;
     }
 
-    SandboxMetaBuilder(String host, int webAdminForwardPort, String projectsXmlFileLocation, String command) {
-//        this.host = host;
-        this.webAdminForwardPort = webAdminForwardPort;
-//        this.projectsXmlFileLocation = projectsXmlFileLocation ;
-        this.command = command;
-    }
-
 
     public void buildSandboxMeta() throws Exception {
         List<String> cmds = prepareServicesStartCommands();
         for (String cmd : cmds) {
-            LOG.info(cmd);
+            LOG.info("Executing [{}]",cmd);
             executeCommand(cmd);
-            Thread.sleep(3_000);
         }
 
-        LOG.info("WAITING FOR SERVICES START");
-        Thread.sleep(50_000);
+        LOG.info("Waiting for services to start");
+        waitForServices();
 
         List<Project> projects = new ArrayList<>();
         AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
@@ -80,7 +66,7 @@ public class SandboxMetaBuilder implements SandboxConstants {
             try {
                 demoBuilder.buildDemoApplication(adminClient);
                 projects.addAll(demoBuilder.getProjectConfigs());
-            }catch (Exception e){
+            } catch (Exception e) {
                 LOG.info(e.getMessage());
             }
         }
@@ -88,10 +74,14 @@ public class SandboxMetaBuilder implements SandboxConstants {
         prepareProjectsXmlFile(projects, SANDBOX_FOLDER + "/" + DEMO_PROJECTS + "/" + DEMO_PROJECTS_XML);
         LOG.info("PROJECTS XML PREPARED");
 
+        String adminRestartCommand = osType.getStartServiceTemplate().
+                replaceAll(SERVICE_NAME_VAR, KaaPackage.ADMIN.getServiceName()).replaceAll("start", "restart");
+        executeCommand(adminRestartCommand);
 
-        executeCommand("sudo service kaa-admin restart");
-        LOG.info("WAITING 50 SEC FOR KAA ADMIN RESTART");
-        Thread.sleep(50000);
+        LOG.info("Waiting for admin restart");
+
+        waitForServices();
+
 
         LOG.info("Building demo applications...");
         SandboxClient sandboxClient = new SandboxClient(DEFAULT_HOST, webAdminForwardPort);
@@ -103,17 +93,21 @@ public class SandboxMetaBuilder implements SandboxConstants {
             throw new RuntimeException("Demo projects count mismatch!");
         }
         for (Project sandboxProject : sandboxProjects) {
-            if (sandboxProject.getDestBinaryFile() != null &&
-                    sandboxProject.getDestBinaryFile().length() > 0) {
-                LOG.info("[{}][{}] Building Demo Project...", sandboxProject.getPlatform(), sandboxProject.getName());
-                String output = sandboxClient.buildProjectBinary(sandboxProject.getId());
-                LOG.info("[{}][{}] Build output:\n{}", sandboxProject.getPlatform(), sandboxProject.getName(), output);
-                if (!sandboxClient.isProjectBinaryDataExists(sandboxProject.getId())) {
-                    LOG.error("Failed to build demo project '{}'", sandboxProject.getName());
-                    throw new RuntimeException("Failed to build demo project '" + sandboxProject.getName() + "'!");
+            try {
+                if (sandboxProject.getDestBinaryFile() != null &&
+                        sandboxProject.getDestBinaryFile().length() > 0) {
+                    LOG.info("[{}][{}] Building Demo Project...", sandboxProject.getPlatform(), sandboxProject.getName());
+                    String output = sandboxClient.buildProjectBinary(sandboxProject.getId());
+                    LOG.info("[{}][{}] Build output:\n{}", sandboxProject.getPlatform(), sandboxProject.getName(), output);
+                    if (!sandboxClient.isProjectBinaryDataExists(sandboxProject.getId())) {
+                        LOG.error("Failed to build demo project '{}'", sandboxProject.getName());
+                        throw new RuntimeException("Failed to build demo project '" + sandboxProject.getName() + "'!");
+                    }
+                } else {
+                    LOG.info("[{}][{}] Skipping Demo Project build...", sandboxProject.getPlatform(), sandboxProject.getName());
                 }
-            } else {
-                LOG.info("[{}][{}] Skipping Demo Project build...", sandboxProject.getPlatform(), sandboxProject.getName());
+            } catch (Exception e) {
+                LOG.info(e.getMessage());
             }
         }
         LOG.info("Finished building demo applications!");
@@ -134,26 +128,52 @@ public class SandboxMetaBuilder implements SandboxConstants {
 
     private String executeCommand(String command) {
 
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
 
         Process p;
         try {
             p = Runtime.getRuntime().exec(command);
             p.waitFor();
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
             String line = "";
             while ((line = reader.readLine()) != null) {
-                output.append(line + "\n");
+                output.append(line).append("\n");
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.debug(e.getMessage());
         }
 
         return output.toString();
 
     }
+
+
+    private int executeCommandAndGetExitValue(String command) throws InterruptedException, IOException {
+        Process p = Runtime.getRuntime().exec(command);
+        p.waitFor();
+        return p.exitValue();
+    }
+
+
+    private void waitForServices() throws InterruptedException, IOException {
+            while (true) {
+                int exitValue = 0;
+                exitValue = executeCommandAndGetExitValue("wget -P /tmp 127.0.0.1:" + webAdminForwardPort);
+                if (exitValue == 0) {
+                    break;
+                } else {
+                    LOG.info("Services not ready. waiting....", exitValue);
+                    Thread.sleep(3_000);
+                }
+            }
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        SandboxMetaBuilder builder = new SandboxMetaBuilder(Integer.valueOf(args[0]));
+        builder.buildSandboxMeta();
+    }
+
 
 }

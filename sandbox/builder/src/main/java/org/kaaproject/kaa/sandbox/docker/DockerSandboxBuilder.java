@@ -1,16 +1,14 @@
 package org.kaaproject.kaa.sandbox.docker;
 
 
+import org.apache.commons.io.IOUtils;
 import org.kaaproject.kaa.sandbox.OsType;
 import org.kaaproject.kaa.sandbox.VeryAbstractSandboxBuilder;
+import org.kaaproject.kaa.server.common.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.LinkedList;
 
 public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
@@ -18,7 +16,11 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerSandboxBuilder.class);
 
-    LinkedList<String> dockerInstructions = new LinkedList<>();
+    private static String dockerBuildPath = "";
+
+
+    private LinkedList<String> dockerInstructions = new LinkedList<>();
+
 
     public DockerSandboxBuilder(File basePath,
                                    OsType osType,
@@ -31,7 +33,7 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     @Override
     protected void waitForLongRunningTask(long seconds) {
-        dockerInstructions.add("RUN su -c 'sleep " + seconds + ";'");
+
     }
 
     @Override
@@ -40,12 +42,22 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
     }
 
     @Override
+    protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception{
+        LOG.info("BUILDING SANDBOX META...");
+        String meta = executeSudoSandboxCommand("service postgresql start && " +
+                "su - postgres -c \"psql --command \\\"alter user postgres with password 'admin';\\\" && " +
+                "psql --command \\\"CREATE DATABASE kaa;\\\"\" && java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + webAdminForwardPort);
+        LOG.info(meta);
+        LOG.info("SANDBOX META BUILD FINISHED");
+    };
+
+    @Override
     protected void unprovisionBoxImpl() throws Exception {
         try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/home/sercv/SandBoxDockerFile")))) {
             for(String instruction: dockerInstructions)
             out.println(instruction);
         }catch (IOException e) {
-            //exception handling left as an exercise for the reader
+            LOG.debug(e.getMessage());
         }
     }
 
@@ -91,13 +103,26 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
 
     @Override
-    protected void transferFile(String file, String to) {
-        dockerInstructions.add("COPY " + file + " " + to);
+    protected void transferFile(String file, String to) throws IOException {
+        File from = new File(file);
+        File fromDocker = new File(dockerBuildPath+"/"+from.getName());
+        IOUtils.copy(new FileInputStream(file), new FileOutputStream(fromDocker));
+        dockerInstructions.add("COPY " + fromDocker.getName() + " " + to);
     }
 
     @Override
-    protected void transferAllFromDir(String dir, String to) {
+    protected void transferAllFromDir(String dir, String to) throws IOException {
+        File from = new File(dir);
+        if (from.isDirectory()) {
+            for(File file: from.listFiles()){
+                File fromDocker = new File(dockerBuildPath+"/"+file.getName());
+                IOUtils.copy(new FileInputStream(file),new FileOutputStream(fromDocker));
+            }
         dockerInstructions.add("COPY " + dir + "/* " + to);
+        }
+        else{
+            transferFile(dir,to);
+        }
     }
 
 
