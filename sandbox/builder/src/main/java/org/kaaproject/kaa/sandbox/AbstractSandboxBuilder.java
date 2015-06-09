@@ -69,6 +69,10 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         exportBox();
     }
 
+    @Override
+    protected void buildSandboxMetaImpl(){
+        executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/" +META_BUILDER_JAR+ " " + webAdminForwardPort);
+    }
 
     @Override
     protected void cleanUp() throws Exception {
@@ -82,9 +86,10 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
     }
 
     @Override
-    protected void onBuildFailure() {
-        LOG.info("build failed");
-//        dumpLogs();
+    protected void onBuildFailure(Exception e) {
+        LOG.error("Failed to build sandbox image!", e);
+        dumpLogs();
+        LOG.error("Look for sandbox build logs at: [{}]",LOG_DUMP_LOCATION);
     }
 
     protected void loadBox() throws Exception {
@@ -150,65 +155,12 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
     }
 
 
- /*
- protected void buildSandboxMeta() throws Exception {
-
-        List<Project> projects = new ArrayList<>();
-        AdminClient adminClient = new AdminClient(DEFAULT_HOST, webAdminForwardPort);
-        List<DemoBuilder> demoBuilders = DemoBuildersRegistry.getRegisteredDemoBuilders();
-        for (DemoBuilder demoBuilder : demoBuilders) {
-            demoBuilder.buildDemoApplication(adminClient);
-            projects.addAll(demoBuilder.getProjectConfigs());
-        }
-
-
-        File projectsXmlFile = prepareProjectsXmlFile(projects);
-        transferFile(projectsXmlFile.getAbsolutePath(), SANDBOX_FOLDER + "/" + DEMO_PROJECTS);
-
-        LOG.info("Building demo applications...");
-        SandboxClient sandboxClient = new SandboxClient(DEFAULT_HOST, webAdminForwardPort);
-
-        List<Project> sandboxProjects = sandboxClient.getDemoProjects();
-        if (projects.size() != sandboxProjects.size()) {
-            LOG.error("Demo projects count mismatch, expected {}, actual {}", projects.size(), sandboxProjects.size());
-            throw new RuntimeException("Demo projects count mismatch!");
-        }
-        for (Project sandboxProject : sandboxProjects) {
-            if (sandboxProject.getDestBinaryFile() != null &&
-                    sandboxProject.getDestBinaryFile().length() > 0) {
-                LOG.info("[{}][{}] Building Demo Project...", sandboxProject.getPlatform(), sandboxProject.getName());
-                String output = sandboxClient.buildProjectBinary(sandboxProject.getId());
-                LOG.info("[{}][{}] Build output:\n{}", sandboxProject.getPlatform(), sandboxProject.getName(), output);
-                if (!sandboxClient.isProjectBinaryDataExists(sandboxProject.getId())) {
-                    LOG.error("Failed to build demo project '{}'", sandboxProject.getName());
-                    throw new RuntimeException("Failed to build demo project '" + sandboxProject.getName() + "'!");
-                }
-            } else {
-                LOG.info("[{}][{}] Skipping Demo Project build...", sandboxProject.getPlatform(), sandboxProject.getName());
-            }
-        }
-        LOG.info("Finished building demo applications!");
-    }
-
-    protected File prepareProjectsXmlFile(List<Project> projects) throws JAXBException {
-        File projectsXmlFile = new File(demoProjectsPath, DEMO_PROJECTS_XML);
-        ProjectsConfig projectsConfig = new ProjectsConfig();
-        projectsConfig.getProjects().addAll(projects);
-
-        JAXBContext jc = JAXBContext.newInstance("org.kaaproject.kaa.sandbox.demo.projects");
-        Marshaller marshaller = jc.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        marshaller.marshal(projectsConfig, projectsXmlFile);
-        return projectsXmlFile;
-    }*/
-
-
     protected void waitForLongRunningTask(long seconds) {
         LOG.info("Sleeping {} sec.", seconds);
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.debug(e.getMessage());
         }
     }
 
@@ -279,6 +231,7 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         return sshExec;
     }
 
+    @Override
     protected void transferAllFromDir(String dir, String to) {
         Scp scp = createScp();
         FileSet fileSet = new FileSet();
@@ -289,6 +242,7 @@ public abstract class AbstractSandboxBuilder extends VeryAbstractSandboxBuilder 
         scp.execute();
     }
 
+    @Override
     protected void transferFile(String file, String to) {
         Scp scp = createScp();
         scp.setLocalFile(file);

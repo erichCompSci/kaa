@@ -8,8 +8,10 @@ import org.kaaproject.kaa.sandbox.VeryAbstractSandboxBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.LinkedList;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
@@ -39,16 +41,12 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
     }
 
     @Override
-    protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception {
-        LOG.info("BUILDING SANDBOX META...");
+    protected void buildSandboxMetaImpl() throws Exception {
         executeSudoSandboxCommand("service postgresql start && su - postgres -c " +
                 "\"psql --command \\\\\"alter user postgres with password 'admin';\\\\\" && " +
                 "psql --command \\\\\"CREATE DATABASE kaa;\\\\\"\" && "+
-                "java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + webAdminForwardPort);
-        LOG.info("SANDBOX META BUILD FINISHED");
+                "java -jar " + SANDBOX_FOLDER + "/" + META_BUILDER_JAR + " " + webAdminForwardPort);
     }
-
-    ;
 
     @Override
     protected void unprovisionBoxImpl() throws Exception {
@@ -63,18 +61,18 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     @Override
     protected String executeScheduledSandboxCommands() {
-        return null;
+        return "";
     }
 
 
     @Override
     protected void preBuild() throws Exception {
-        LOG.info("Starting Dockerfile creation");
+        LOG.info("Prepearing docker build context");
     }
 
     @Override
     protected void postBuild() throws Exception {
-        LOG.info("Dockerfile creation finished");
+        LOG.info("Docker build context successfully prepared at [{}]",DOCKER_BUILD_PATH);
     }
 
     @Override
@@ -83,15 +81,14 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
     }
 
     @Override
-    protected void onBuildFailure() {
-
+    protected void onBuildFailure(Exception e) {
+        LOG.error("Failed to prepare docker sandbox build context!", e);
     }
-
 
     @Override
     protected String executeSudoSandboxCommand(String command) {
         dockerInstructions.append("RUN ").append(command).append("\n");
-        return null;
+        return "";
     }
 
     @Override
@@ -105,26 +102,15 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
         File from = new File(file);
         File fromDocker = new File(DOCKER_BUILD_PATH + "/" + from.getName());
         IOUtils.copy(new FileInputStream(file), new FileOutputStream(fromDocker));
-        dockerInstructions.append("COPY ").append(fromDocker.getName()).append(" ").append(to).append("\n");
+        dockerInstructions.append("COPY ").append(fromDocker.getName()).append(" ").append(to).append("/\n");
     }
 
     @Override
     protected void transferAllFromDir(String dir, String to) throws IOException {
         File from = new File(dir);
-        if (from.isDirectory()) {
-            for (File file : from.listFiles()) {
-                File fromDocker = new File(DOCKER_BUILD_PATH + "/" + file.getName());
-                if (file.isDirectory()) {
-                    FileUtils.copyDirectory(file, fromDocker);
-                } else {
-                    FileUtils.copyFile(file, fromDocker);
-                }
-            }
-            dockerInstructions.append("COPY ").append(dir).append("/* ").append(to).append("\n");
-        } else {
-            transferFile(dir, to);
-        }
+        File fromDocker = new File(DOCKER_BUILD_PATH + "/" + from.getName());
+        FileUtils.copyDirectory(from, fromDocker);
+        dockerInstructions.append("COPY ").append(from.getName()).append(" ").append(to).append("\n");
     }
-
 
 }

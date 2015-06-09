@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -51,10 +50,10 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
             build();
             postBuild();
         } catch (Exception e) {
-            onBuildFailure();
+            onBuildFailure(e);
             throw e;
         } finally {
-//            cleanUp();
+            cleanUp();
         }
     }
 
@@ -82,25 +81,21 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         scheduleSudoSandboxCommand("sed -i \"s/\\(tenant_developer_password=\\).*\\$/\\1" + AbstractDemoBuilder.tenantDeveloperPassword + "/\" " + ADMIN_FOLDER + "/conf/sandbox-server.properties");
         executeScheduledSandboxCommands();
 
-
         File changeKaaHostFile = prepareChangeKaaHostFile();
         File sandboxSplashFile = prepareSandboxSplashFile();
         transferFile(changeKaaHostFile.getAbsolutePath(), SANDBOX_FOLDER);
         transferFile(sandboxSplashFile.getAbsolutePath(), SANDBOX_FOLDER);
 
-
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
 
-
-        buildSandboxMeta("xml", "command");
+        buildSandboxMeta();
 
     }
 
-    protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception{
+    private void buildSandboxMeta() throws Exception{
         LOG.info("BUILDING SANDBOX META...");
-        String meta = executeSudoSandboxCommand("java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + webAdminForwardPort);
-        LOG.info(meta);
+        buildSandboxMetaImpl();
         LOG.info("SANDBOX META BUILD FINISHED");
     };
 
@@ -192,13 +187,15 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
     }
 
 
+    abstract protected void buildSandboxMetaImpl() throws Exception;
+
     abstract protected void preBuild() throws Exception;
 
     abstract protected void postBuild() throws Exception;
 
     protected abstract void cleanUp() throws Exception;
 
-    protected abstract void onBuildFailure();
+    protected abstract void onBuildFailure(Exception e);
 
     abstract protected String executeScheduledSandboxCommands();
 

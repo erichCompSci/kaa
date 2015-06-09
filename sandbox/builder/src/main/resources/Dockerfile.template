@@ -80,6 +80,7 @@ RUN echo "service postgresql start"  >> /etc/bash.bashrc
 VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 
 
+RUN sed -i "s/gui_change_host_enabled=true/gui_change_host_enabled=false/g" /usr/lib/kaa-admin/conf/sandbox-server.properties
 
 RUN echo "service kaa-bootstrap start"  >> /etc/bash.bashrc
 RUN echo "service kaa-operations start"  >> /etc/bash.bashrc
