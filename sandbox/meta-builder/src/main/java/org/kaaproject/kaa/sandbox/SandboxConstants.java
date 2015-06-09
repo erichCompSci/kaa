@@ -23,7 +23,8 @@ public interface SandboxConstants {
     
     public static final String WEB_ADMIN_PORT_VAR = "\\$\\{web_admin_port\\}";
     public static final String SSH_FORWARD_PORT_VAR = "\\$\\{ssh_forward_port\\}";
-    
+    public static final String KAA_DOCKERFILE_PART = "\\$\\{kaa_dockerfile_part\\}";
+
     public static final String STOP_SERVICES_VAR = "\\$\\{stop_services\\}";
     public static final String SET_NEW_HOSTS = "\\$\\{set_new_hosts\\}";
     public static final String START_SERVICES_VAR = "\\$\\{start_services\\}";
@@ -41,15 +42,20 @@ public interface SandboxConstants {
     public static final String DEMO_PROJECTS_PATH = "/"+SHARED_FOLDER+"/"+DEMO_PROJECTS;    
     public static final String DEMO_PROJECTS_XML = "demo_projects.xml";
     public static final String SANDBOX_PATH = "/"+SHARED_FOLDER+"/sandbox";
-    
+
     public static final String SANDBOX_SPLASH_PY_TEMPLATE = "scripts/sandbox-splash.py.template";
     public static final String SANDBOX_SPLASH_PY = "sandbox-splash.py";
 
     public static final String CHANGE_KAA_HOST_TEMPLATE = "scripts/change_kaa_host.sh.template";
     public static final String CHANGE_KAA_HOST = "change_kaa_host.sh";
-    
+
+    public static final String DOCKERFILE_TEMPLATE = "Dockerfile.template";
+    public static final String DOCKERFILE = "Dockerfile";
+    public static final String DOCKER_BUILD_PATH = "sandbox/builder/target/docker/";
+
     public static final String SANDBOX_FOLDER = "/usr/lib/kaa-sandbox";
     public static final String ADMIN_FOLDER = "/usr/lib/kaa-admin";
+
 
     public static final String LOG_DUMP_LOCATION = "sandbox/builder/target/sandbox_logs/";
 }

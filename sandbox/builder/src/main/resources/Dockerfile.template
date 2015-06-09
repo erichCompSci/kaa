@@ -1,0 +1,87 @@
+FROM ubuntu:latest
+
+MAINTAINER Sergii Yemets <syemets@cybervisiontech.com>
+
+# add user kaa
+RUN useradd -s /bin/bash kaa
+
+# change kaa password to 'kaa'
+RUN echo kaa:kaa | chpasswd
+
+# add kaa to sudo group
+RUN usermod -a -G sudo kaa
+
+# install oracle java7 jdk
+RUN sudo echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | \
+    sudo /usr/bin/debconf-set-selections && \
+  apt-get install -y software-properties-common && \
+  add-apt-repository -y ppa:webupd8team/java && \
+  apt-get update && apt-get install -y oracle-java7-installer
+
+# install cassandra
+RUN apt-get install -y curl && \
+  echo "deb http://debian.datastax.com/community stable main" | sudo tee -a /etc/apt/sources.list.d/datastax.sources.list && \
+  curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add - && \
+  apt-get update && \
+  apt-get install -y dsc21
+
+# install postgresql
+RUN apt-get install -y postgresql postgresql-contrib postgresql-client
+
+
+# install mongodb
+ENV MONGO_DB_PATH /var/lib/mongodb
+RUN apt-get install -y mongodb && \
+  echo ${MONGO_DB_PATH} >> /etc/mongod.conf
+
+
+RUN apt-get install -y ant whiptail apt-utils netcat
+
+
+# install Android SDK
+ENV ANDROID_SDK_VERSION r24.2
+ENV ANDROID_API_LEVEL 21
+ENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox
+ENV KAA_HOME /home/kaa
+ENV ANDROID_BUILD_TOOLS_VERSION 21.1.1
+ENV ANDROID_HOME ${KAA_SANDBOX_HOME}/android-sdk-linux
+
+
+RUN echo "export ANDROID_HOME=${ANDROID_HOME}" >> /etc/profile
+ENV PATH ${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
+
+# install android sdk dependencies
+RUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386
+
+RUN apt-get install -y wget && \
+  mkdir -p ${KAA_SANDBOX_HOME} && \
+  wget -qO- "http://dl.google.com/android/android-sdk_${ANDROID_SDK_VERSION}-linux.tgz" \
+  | tar -zxv -C ${KAA_SANDBOX_HOME} && \
+  echo y | ${ANDROID_HOME}/tools/android update sdk --no-ui --all --filter platform-tool,android-${ANDROID_API_LEVEL},sysimg-${ANDROID_API_LEVEL},build-tools-${ANDROID_BUILD_TOOLS_VERSION}
+
+
+# install zookeper
+RUN wget -q -O - http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz | tar -xzf - -C /opt \
+    && mv /opt/zookeeper-3.4.6 /opt/zookeeper \
+    && cp /opt/zookeeper/conf/zoo_sample.cfg /opt/zookeeper/conf/zoo.cfg \
+    && mkdir -p /tmp/zookeeper
+
+
+# autostart services
+RUN echo "/opt/zookeeper/bin/zkServer.sh start"  >> /etc/bash.bashrc
+RUN echo "service mongodb start" >> /etc/bash.bashrc
+
+
+${kaa_dockerfile_part}
+
+
+RUN echo "service postgresql start"  >> /etc/bash.bashrc
+
+VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
+
+
+
+RUN echo "service kaa-bootstrap start"  >> /etc/bash.bashrc
+RUN echo "service kaa-operations start"  >> /etc/bash.bashrc
+RUN echo "service kaa-control start"  >> /etc/bash.bashrc
+RUN echo "service kaa-admin start"  >> /etc/bash.bashrc

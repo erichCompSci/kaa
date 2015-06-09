@@ -1,10 +1,10 @@
 package org.kaaproject.kaa.sandbox.docker;
 
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.kaaproject.kaa.sandbox.OsType;
 import org.kaaproject.kaa.sandbox.VeryAbstractSandboxBuilder;
-import org.kaaproject.kaa.server.common.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,17 +16,14 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerSandboxBuilder.class);
 
-    private static String dockerBuildPath = "";
-
-
-    private LinkedList<String> dockerInstructions = new LinkedList<>();
+    private StringBuilder dockerInstructions = new StringBuilder();
 
 
     public DockerSandboxBuilder(File basePath,
-                                   OsType osType,
-                                   String boxName,
-                                   int sshForwardPort,
-                                   int webAdminForwardPort) {
+                                OsType osType,
+                                String boxName,
+                                int sshForwardPort,
+                                int webAdminForwardPort) {
         super(basePath, osType, boxName, sshForwardPort, webAdminForwardPort);
     }
 
@@ -42,30 +39,32 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
     }
 
     @Override
-    protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception{
+    protected void buildSandboxMeta(String demoProjectsXML, String startServicesCommand) throws Exception {
         LOG.info("BUILDING SANDBOX META...");
-        String meta = executeSudoSandboxCommand("service postgresql start && " +
-                "su - postgres -c \"psql --command \\\"alter user postgres with password 'admin';\\\" && " +
-                "psql --command \\\"CREATE DATABASE kaa;\\\"\" && java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + webAdminForwardPort);
-        LOG.info(meta);
+        executeSudoSandboxCommand("service postgresql start && su - postgres -c " +
+                "\"psql --command \\\\\"alter user postgres with password 'admin';\\\\\" && " +
+                "psql --command \\\\\"CREATE DATABASE kaa;\\\\\"\" && "+
+                "java -jar " + SANDBOX_FOLDER + "/meta-builder.jar " + webAdminForwardPort);
         LOG.info("SANDBOX META BUILD FINISHED");
-    };
+    }
+
+    ;
 
     @Override
     protected void unprovisionBoxImpl() throws Exception {
-        try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/home/sercv/SandBoxDockerFile")))) {
-            for(String instruction: dockerInstructions)
-            out.println(instruction);
-        }catch (IOException e) {
-            LOG.debug(e.getMessage());
-        }
+        String dockerfileTemplate = org.kaaproject.kaa.server.common.utils.FileUtils.readResource(DOCKERFILE_TEMPLATE);
+        String dockerfileSource = dockerfileTemplate.replaceAll(KAA_DOCKERFILE_PART, dockerInstructions.toString());
+        File dockerfile = new File(DOCKER_BUILD_PATH + "/" + DOCKERFILE);
+        FileOutputStream fos = new FileOutputStream(dockerfile);
+        fos.write(dockerfileSource.getBytes());
+        fos.flush();
+        fos.close();
     }
 
     @Override
     protected String executeScheduledSandboxCommands() {
         return null;
     }
-
 
 
     @Override
@@ -89,43 +88,43 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
     }
 
 
-
     @Override
     protected String executeSudoSandboxCommand(String command) {
-        dockerInstructions.add("RUN " + command);
+        dockerInstructions.append("RUN ").append(command).append("\n");
         return null;
     }
 
     @Override
     protected void scheduleSudoSandboxCommand(String command) {
-        dockerInstructions.add("RUN " + command);
+        dockerInstructions.append("RUN ").append(command).append("\n");
     }
 
 
     @Override
     protected void transferFile(String file, String to) throws IOException {
         File from = new File(file);
-        File fromDocker = new File(dockerBuildPath+"/"+from.getName());
+        File fromDocker = new File(DOCKER_BUILD_PATH + "/" + from.getName());
         IOUtils.copy(new FileInputStream(file), new FileOutputStream(fromDocker));
-        dockerInstructions.add("COPY " + fromDocker.getName() + " " + to);
+        dockerInstructions.append("COPY ").append(fromDocker.getName()).append(" ").append(to).append("\n");
     }
 
     @Override
     protected void transferAllFromDir(String dir, String to) throws IOException {
         File from = new File(dir);
         if (from.isDirectory()) {
-            for(File file: from.listFiles()){
-                File fromDocker = new File(dockerBuildPath+"/"+file.getName());
-                IOUtils.copy(new FileInputStream(file),new FileOutputStream(fromDocker));
+            for (File file : from.listFiles()) {
+                File fromDocker = new File(DOCKER_BUILD_PATH + "/" + file.getName());
+                if (file.isDirectory()) {
+                    FileUtils.copyDirectory(file, fromDocker);
+                } else {
+                    FileUtils.copyFile(file, fromDocker);
+                }
             }
-        dockerInstructions.add("COPY " + dir + "/* " + to);
-        }
-        else{
-            transferFile(dir,to);
+            dockerInstructions.append("COPY ").append(dir).append("/* ").append(to).append("\n");
+        } else {
+            transferFile(dir, to);
         }
     }
-
-
 
 
 }
