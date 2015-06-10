@@ -55,10 +55,11 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
     private ExecutorService executor;
     private ExecutorService callbackExecutor;
 
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService statisticsScheduler = Executors.newScheduledThreadPool(1);
     private AtomicInteger cassandraSuccessLogCount = new AtomicInteger();
     private AtomicInteger cassandraFailureLogCount = new AtomicInteger();
     private AtomicInteger inputLogCount = new AtomicInteger();
+    private AtomicInteger pendingTasks = new AtomicInteger();
 
     private LogEventDao logEventDao;
     private String tableName;
@@ -67,23 +68,27 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
 
 
     private ThreadLocal<Map<String, GenericAvroConverter<GenericRecord>>> converters = new ThreadLocal<Map<String, GenericAvroConverter<GenericRecord>>>() {
-
         @Override
         protected Map<String, GenericAvroConverter<GenericRecord>> initialValue() {
             return new HashMap<String, GenericAvroConverter<GenericRecord>>();
         }
-
     };
 
 
     public CassandraLogAppender() {
         super(CassandraConfig.class);
-        scheduler.scheduleWithFixedDelay(new Runnable() {
+        statisticsScheduler.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 long second = System.currentTimeMillis() / 1000;
-                LOG.info("[{}] Received {} log record count, {} success cassandra callbacks, {}  failure cassandra callbacks / second.",
-                        second, inputLogCount.getAndSet(0), cassandraSuccessLogCount.getAndSet(0), cassandraFailureLogCount.getAndSet(0));
+                int inputCount = inputLogCount.getAndSet(0);
+                int successCount = cassandraSuccessLogCount.getAndSet(0);
+                int failureCount = cassandraFailureLogCount.getAndSet(0);
+                if (inputCount != 0 || successCount != 0 || failureCount != 0) {
+                    LOG.info("[{}] Received {} log record count, {} success cassandra callbacks, {}  failure cassandra callbacks / second.",
+                            second, inputCount, successCount, failureCount);
+                }
+                pendingTasks.getAndAdd(inputCount - successCount - failureCount);
             }
         }, 0L, 1L, TimeUnit.SECONDS);
     }
@@ -185,8 +190,8 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
             if (callbackExecutor != null) {
                 callbackExecutor.shutdownNow();
             }
-            if (scheduler != null) {
-                scheduler.shutdownNow();
+            if (statisticsScheduler != null) {
+                statisticsScheduler.shutdownNow();
             }
         }
         LOG.info("Cassandra log appender stoped.");
@@ -199,7 +204,7 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
         try {
             for (LogEvent logEvent : logEventPack.getEvents()) {
                 LOG.debug("Convert log events [{}] to dto objects.", logEvent);
-                if (logEvent == null | logEvent.getLogData() == null) {
+                if (logEvent == null || logEvent.getLogData() == null) {
                     continue;
                 }
                 LOG.trace("Avro record converter [{}] with log data [{}]", eventConverter, logEvent.getLogData());
