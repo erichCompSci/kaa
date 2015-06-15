@@ -1,5 +1,5 @@
 package org.kaaproject.kaa.server.common.monitoring;
 
-public enum MachineStateType {
+public enum NodeState {
     OVERLOADED, NORMAL;
 }

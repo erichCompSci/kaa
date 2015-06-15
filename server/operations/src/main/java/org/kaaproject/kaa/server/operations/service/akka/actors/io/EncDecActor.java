@@ -22,8 +22,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.kaaproject.kaa.server.common.monitoring.NodeState;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.RedirectionRule;
 import org.kaaproject.kaa.server.operations.service.akka.AkkaContext;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.mon.NodeStateChangeMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.io.RuleTimeoutMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.io.response.SessionResponse;
 import org.kaaproject.kaa.server.transport.message.SessionAwareMessage;
@@ -51,16 +53,18 @@ public class EncDecActor extends UntypedActor {
     /** random */
     private final Random random;
 
+    private boolean isOverloaded = false;
+
     /**
      * Instantiates a new enc dec actor.
-     * 
-     * @param epsActor
-     *            the eps actor
-     * @param supportUnencryptedConnection
+     *
+     * @param opsActor the operations actor
+     * @param context the Akka context
+     * @param platformProtocols the set of supported protocols
      */
-    public EncDecActor(ActorRef epsActor, AkkaContext context, Set<String> platformProtocols) {
+    public EncDecActor(ActorRef opsActor, AkkaContext context, Set<String> platformProtocols) {
         super();
-        this.messageProcessor = new EncDecActorMessageProcessor(epsActor, context, platformProtocols);
+        this.messageProcessor = new EncDecActorMessageProcessor(opsActor, context, platformProtocols);
         this.redirectionRules = new HashMap<>();
         this.random = new Random();
     }
@@ -137,30 +141,57 @@ public class EncDecActor extends UntypedActor {
     @Override
     public void onReceive(Object message) throws Exception {
         LOG.debug("Received: {}", message.getClass().getName());
-        if (message instanceof SessionInitMessage) {
-            RedirectionRule redirection = checkInitRedirection(redirectionRules, random.nextDouble());
-            if (redirection == null) {
-                messageProcessor.decodeAndForward(context(), (SessionInitMessage) message);
-            } else {
-                messageProcessor.redirect(redirection, (SessionInitMessage) message);
-            }
-        } else if (message instanceof SessionAware) {
-            if (message instanceof SessionAwareMessage) {
-                RedirectionRule redirection = checkSessionRedirection(redirectionRules, random.nextDouble());
-                if (redirection == null) {
-                    messageProcessor.decodeAndForward(context(), (SessionAwareMessage) message);
-                } else {
-                    messageProcessor.redirect(redirection, (SessionAwareMessage) message);
-                }
-            } else {
-                messageProcessor.forward(context(), (SessionAware) message);
-            }
-        } else if (message instanceof SessionResponse) {
-            messageProcessor.encodeAndReply((SessionResponse) message);
+        if(message instanceof NodeStateChangeMessage) {
+            processNodeStateChangeMessage((NodeStateChangeMessage) message);
         } else if (message instanceof RedirectionRule) {
             applyRedirectionRule((RedirectionRule) message);
         } else if (message instanceof RuleTimeoutMessage) {
             removeRedirectionRule((RuleTimeoutMessage) message);
+        } else {
+            processSessionMessages(message);
+        }
+    }
+
+    private void processSessionMessages(Object message) {
+        if (!isOverloaded) {
+            if (message instanceof SessionInitMessage) {
+                RedirectionRule redirection = checkInitRedirection(redirectionRules, random.nextDouble());
+                if (redirection == null) {
+                    messageProcessor.decodeAndForward(context(), (SessionInitMessage) message);
+                } else {
+                    messageProcessor.redirect(redirection, (SessionInitMessage) message);
+                }
+            } else if (message instanceof SessionAware) {
+                if (message instanceof SessionAwareMessage) {
+                    RedirectionRule redirection = checkSessionRedirection(redirectionRules, random.nextDouble());
+                    if (redirection == null) {
+                        messageProcessor.decodeAndForward(context(), (SessionAwareMessage) message);
+                    } else {
+                        messageProcessor.redirect(redirection, (SessionAwareMessage) message);
+                    }
+                } else {
+                    messageProcessor.forward(context(), (SessionAware) message);
+                }
+            } else if (message instanceof SessionResponse) {
+                messageProcessor.encodeAndReply((SessionResponse) message);
+            }
+        } else {
+            if (message instanceof SessionInitMessage) {
+                messageProcessor.processDisconnectDueOverload((SessionInitMessage) message);
+            } else if (message instanceof SessionAwareMessage) {
+                messageProcessor.processDisconnectDueOverload((SessionAwareMessage) message);
+            }  else if (message instanceof SessionResponse) {
+                messageProcessor.processDisconnectDueOverload((SessionResponse) message);
+            }
+        }
+    }
+
+    private void processNodeStateChangeMessage(NodeStateChangeMessage message) {
+        NodeState nodeState = message.getNodeState();
+        if (NodeState.OVERLOADED.equals(nodeState)) {
+            isOverloaded = true;
+        } else {
+            isOverloaded = false;
         }
     }
 

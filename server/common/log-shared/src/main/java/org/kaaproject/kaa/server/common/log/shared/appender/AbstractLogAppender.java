@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.util.concurrent.FutureCallback;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.kaaproject.kaa.common.avro.AvroByteArrayConverter;
@@ -30,13 +32,18 @@ import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
 import org.kaaproject.kaa.common.dto.logs.LogEventDto;
 import org.kaaproject.kaa.common.dto.logs.LogHeaderStructureDto;
 import org.kaaproject.kaa.server.common.log.shared.avro.gen.RecordHeader;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
+import org.kaaproject.kaa.server.common.monitoring.NodeState;
+import org.kaaproject.kaa.server.common.monitoring.NodeStateChangeCallback;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringInfo;
+import org.kaaproject.kaa.server.common.monitoring.callback.CallbackHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The Class LogAppender.
  */
-public abstract class AbstractLogAppender<T extends SpecificRecordBase> implements LogAppender {
+public abstract class AbstractLogAppender<T extends SpecificRecordBase> implements LogAppender, NodeStateChangeCallback {
 
     /** The Constant LOG. */
     private static final Logger LOG = LoggerFactory.getLogger(AbstractLogAppender.class);
@@ -64,6 +71,11 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
     Map<String, GenericAvroConverter<GenericRecord>> converters = new HashMap<>();
 
     private final Class<T> configurationClass;
+
+    private MonitoringService monitoringService;
+
+    protected MonitoringInfo tasksInfo;
+    protected AtomicBoolean isOverloaded = new AtomicBoolean(false);
 
     public AbstractLogAppender(Class<T> configurationClass) {
         this.configurationClass = configurationClass;
@@ -122,6 +134,11 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
         this.appenderId = appenderId;
     }
 
+    @Override
+    public void setMonitoringService(MonitoringService monitoringService) {
+        this.monitoringService = monitoringService;
+    }
+
     /**
      * Gets the application token.
      * 
@@ -156,8 +173,24 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
     }
 
     @Override
+    public void onStateChange(NodeState state) {
+        switch (state) {
+            case OVERLOADED:
+                isOverloaded.set(true);
+                break;
+            case NORMAL:
+                isOverloaded.set(false);
+                break;
+            default:
+                LOG.warn("Log appender does not support new load state.");
+                break;
+        }
+    }
+
+    @Override
     public void init(LogAppenderDto appender) {
         this.header = appender.getHeaderStructure();
+        tasksInfo = monitoringService.registerStatistics(appender.getName(), this);
         initLogAppender(appender);
     }
 
@@ -203,8 +236,8 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
                 LOG.trace("Avro record converter [{}] with log data [{}]", eventConverter, logEvent.getLogData());
                 GenericRecord decodedLog = eventConverter.decodeBinary(logEvent.getLogData());
                 LOG.trace("Avro header record converter [{}]", headerConverter);
-                String encodedJsonLogHeader = headerConverter.encodeToJson(header);
-                String encodedJsonLog = eventConverter.encodeToJson(decodedLog);
+                String encodedJsonLogHeader = header != null ? header.toString() : null;
+                String encodedJsonLog = decodedLog != null ? decodedLog.toString() : null;
                 events.add(new LogEventDto(encodedJsonLogHeader, encodedJsonLog));
             }
         } catch (IOException e) {
@@ -214,6 +247,9 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
         return events;
     }
 
+    protected FutureCallback getCallbackHolder(LogDeliveryCallback listener, int logCount) {
+        return new CallbackHolder(listener, tasksInfo, logCount);
+    }
     /**
      * Gets the converter.
      * 

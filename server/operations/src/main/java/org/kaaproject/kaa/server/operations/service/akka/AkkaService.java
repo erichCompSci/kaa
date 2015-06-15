@@ -58,7 +58,15 @@ public interface AkkaService extends MessageHandler {
      */
     void onUserConfigurationUpdate(UserConfigurationUpdate update);
 
+    /**
+     *
+     * @param defaultLoadBalancingService
+     * @param loadStatsUpdateFrequency
+     */
     void setStatusListener(AkkaStatusListener defaultLoadBalancingService, long loadStatsUpdateFrequency);
 
+    /**
+     * 
+     */
     void removeStatusListener();
 }

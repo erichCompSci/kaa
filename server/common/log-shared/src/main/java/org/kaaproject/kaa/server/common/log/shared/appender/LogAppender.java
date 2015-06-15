@@ -16,12 +16,13 @@
 package org.kaaproject.kaa.server.common.log.shared.appender;
 
 import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 
 public interface LogAppender {
 
     /**
      * Set the name of this appender.
-     * 
+     *
      * @param name
      *            the name of this appender
      */
@@ -29,14 +30,14 @@ public interface LogAppender {
 
     /**
      * Return the name of this appender.
-     * 
+     *
      * @return the name of this appender
      */
     String getName();
 
     /**
      * Set the id of appender.
-     * 
+     *
      * @param appenderId
      *            the id of this appender
      */
@@ -44,14 +45,21 @@ public interface LogAppender {
 
     /**
      * Gets the id.
-     * 
+     *
      * @return the id
      */
     String getAppenderId();
 
     /**
+     * Set monitoring service for log appender.
+     *
+     * @param monitoringService
+     */
+    void setMonitoringService(MonitoringService monitoringService);
+
+    /**
      * Sets the application token.
-     * 
+     *
      * @param applicationToken
      *            the applicationToken to set
      */
@@ -59,7 +67,7 @@ public interface LogAppender {
 
     /**
      * Inits the appender.
-     * 
+     *
      * @param appender
      *            the appender
      */
@@ -67,7 +75,7 @@ public interface LogAppender {
 
     /**
      * Do append.
-     * 
+     *
      * @param logEventPack
      *            the log event pack
      */
@@ -75,7 +83,7 @@ public interface LogAppender {
 
     /**
      * Check if appender support schema version
-     * 
+     *
      * @param version
      *            the version of schema
      * @return true if appender supports specified schema version, false
@@ -85,7 +93,7 @@ public interface LogAppender {
 
     /**
      * Check if appender requires confirmation of data delivery
-     * 
+     *
      * @return true if appender requires confirmation of data delivery, false
      *         otherwise.
      */

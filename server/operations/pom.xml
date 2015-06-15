@@ -72,6 +72,10 @@
             <artifactId>zk</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.kaaproject.kaa.server.common</groupId>
+            <artifactId>monitoring</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.kaaproject.kaa.server.transports.http</groupId>
             <artifactId>transport</artifactId>
             <classifier>http</classifier>

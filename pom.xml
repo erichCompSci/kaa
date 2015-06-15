@@ -752,6 +752,11 @@ Copyright 2014 CyberVision, Inc.
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.kaaproject.kaa.server.common</groupId>
+                <artifactId>monitoring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.kaaproject.kaa.client</groupId>
                 <artifactId>client-java-core</artifactId>
                 <version>${project.version}</version>

@@ -17,8 +17,6 @@
 package org.kaaproject.kaa.server.appenders.cassandra.appender;
 
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.exceptions.UnsupportedFeatureException;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.avro.generic.GenericRecord;
@@ -43,9 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
 
@@ -54,12 +49,6 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
 
     private ExecutorService executor;
     private ExecutorService callbackExecutor;
-
-    private ScheduledExecutorService statisticsScheduler = Executors.newScheduledThreadPool(1);
-    private AtomicInteger cassandraSuccessLogCount = new AtomicInteger();
-    private AtomicInteger cassandraFailureLogCount = new AtomicInteger();
-    private AtomicInteger inputLogCount = new AtomicInteger();
-    private AtomicInteger pendingTasks = new AtomicInteger();
 
     private LogEventDao logEventDao;
     private String tableName;
@@ -77,59 +66,55 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
 
     public CassandraLogAppender() {
         super(CassandraConfig.class);
-        statisticsScheduler.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                long second = System.currentTimeMillis() / 1000;
-                int inputCount = inputLogCount.getAndSet(0);
-                int successCount = cassandraSuccessLogCount.getAndSet(0);
-                int failureCount = cassandraFailureLogCount.getAndSet(0);
-                if (inputCount != 0 || successCount != 0 || failureCount != 0) {
-                    LOG.info("[{}] Received {} log record count, {} success cassandra callbacks, {}  failure cassandra callbacks / second.",
-                            second, inputCount, successCount, failureCount);
-                }
-                pendingTasks.getAndAdd(inputCount - successCount - failureCount);
-            }
-        }, 0L, 1L, TimeUnit.SECONDS);
     }
 
     @Override
     public void doAppend(final LogEventPack logEventPack, final RecordHeader header, final LogDeliveryCallback listener) {
         if (!closed) {
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        LOG.debug("[{}] appending {} logs to cassandra collection", tableName, logEventPack.getEvents().size());
-                        GenericAvroConverter<GenericRecord> eventConverter = getConverter(logEventPack.getLogSchema().getSchema());
-                        GenericAvroConverter<GenericRecord> headerConverter = getConverter(header.getSchema().toString());
-                        List<CassandraLogEventDto> dtoList = generateCassandraLogEvent(logEventPack, header, eventConverter);
-                        LOG.debug("[{}] saving {} objects", tableName, dtoList.size());
-                        if (!dtoList.isEmpty()) {
-                            int logCount = dtoList.size();
-                            inputLogCount.getAndAdd(logCount);
-                            switch (executeRequestType) {
-                                case ASYNC:
-                                    ListenableFuture<ResultSet> result = logEventDao.saveAsync(dtoList, tableName, eventConverter,
-                                            headerConverter);
-                                    Futures.addCallback(result, new Callback(listener, cassandraSuccessLogCount, cassandraFailureLogCount, logCount), callbackExecutor);
-                                    break;
-                                case SYNC:
-                                    logEventDao.save(dtoList, tableName, eventConverter, headerConverter);
-                                    listener.onSuccess();
-                                    cassandraSuccessLogCount.getAndAdd(logCount);
-                                    break;
+            if (!isOverloaded.get()) {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            LOG.debug("[{}] appending {} logs to cassandra collection", tableName, logEventPack.getEvents().size());
+                            GenericAvroConverter<GenericRecord> eventConverter = getConverter(logEventPack.getLogSchema().getSchema());
+                            GenericAvroConverter<GenericRecord> headerConverter = getConverter(header.getSchema().toString());
+                            List<CassandraLogEventDto> dtoList = generateCassandraLogEvent(logEventPack, header, eventConverter);
+                            LOG.debug("[{}] saving {} objects", tableName, dtoList.size());
+                            if (!dtoList.isEmpty()) {
+                                int logCount = dtoList.size();
+                                switch (executeRequestType) {
+                                    case ASYNC:
+                                        ListenableFuture<ResultSet> result = logEventDao.saveAsync(dtoList, tableName, eventConverter, headerConverter);
+                                        Futures.addCallback(result, getCallbackHolder(listener, logCount), callbackExecutor);
+                                        break;
+                                    case SYNC:
+                                        try {
+                                            tasksInfo.appendInputTaskCount(logCount);
+                                            logEventDao.save(dtoList, tableName, eventConverter, headerConverter);
+                                            listener.onSuccess();
+                                            tasksInfo.appendSuccessTaskCount(logCount);
+                                        } catch (IOException e) {
+                                            listener.onInternalError();
+                                            tasksInfo.appendFailureTaskCount(logCount);
+                                        }
+                                        break;
+                                }
+                                LOG.debug("[{}] appended {} logs to cassandra collection", tableName, logEventPack.getEvents().size());
+                            } else {
+                                LOG.warn("Received log event list is empty");
+                                listener.onInternalError();
                             }
-                            LOG.debug("[{}] appended {} logs to cassandra collection", tableName, logEventPack.getEvents().size());
-                        } else {
+                        } catch (Exception e) {
+                            LOG.warn("Got exception. Can't process log events", e);
                             listener.onInternalError();
                         }
-                    } catch (Exception e) {
-                        LOG.warn("Got exception. Can't process log events", e);
-                        listener.onInternalError();
                     }
-                }
-            });
+                });
+            } else {
+                LOG.info("Attempted to append to overloaded appender named [{}].", getName());
+                listener.onInternalError();
+            }
         } else {
             LOG.info("Attempted to append to closed appender named [{}].", getName());
             listener.onConnectionError();
@@ -190,9 +175,6 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
             if (callbackExecutor != null) {
                 callbackExecutor.shutdownNow();
             }
-            if (statisticsScheduler != null) {
-                statisticsScheduler.shutdownNow();
-            }
         }
         LOG.info("Cassandra log appender stoped.");
     }
@@ -224,40 +206,6 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
             executeRequestType = CassandraExecuteRequestType.ASYNC;
         } else {
             executeRequestType = CassandraExecuteRequestType.SYNC;
-        }
-    }
-
-    private static final class Callback implements FutureCallback<ResultSet> {
-
-        private final LogDeliveryCallback callback;
-        private final AtomicInteger cassandraSuccessLogCount;
-        private final AtomicInteger cassandraFailureLogCount;
-        private final int size;
-
-        private Callback(LogDeliveryCallback callback, AtomicInteger cassandraSuccessLogCount, AtomicInteger cassandraFailureLogCount, int size) {
-            this.callback = callback;
-            this.cassandraSuccessLogCount = cassandraSuccessLogCount;
-            this.cassandraFailureLogCount = cassandraFailureLogCount;
-            this.size = size;
-        }
-
-        @Override
-        public void onSuccess(ResultSet result) {
-            cassandraSuccessLogCount.getAndAdd(size);
-            callback.onSuccess();
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            cassandraFailureLogCount.getAndAdd(size);
-            LOG.warn("Failed to store record", t);
-            if (t instanceof UnsupportedFeatureException) {
-                callback.onRemoteError();
-            } else if (t instanceof IOException) {
-                callback.onConnectionError();
-            } else {
-                callback.onInternalError();
-            }
         }
     }
 

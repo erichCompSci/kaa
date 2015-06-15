@@ -22,10 +22,14 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import org.kaaproject.kaa.common.dto.ApplicationDto;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
+import org.kaaproject.kaa.server.common.monitoring.NodeState;
+import org.kaaproject.kaa.server.common.monitoring.NodeStateChangeCallback;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.RedirectionRule;
 import org.kaaproject.kaa.server.operations.service.akka.actors.core.OperationsServerActor;
 import org.kaaproject.kaa.server.operations.service.akka.actors.io.EncDecActor;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.mon.NodeStateChangeMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.notification.ThriftNotificationMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.stats.StatusRequestMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.user.UserConfigurationUpdate;
@@ -48,7 +52,7 @@ import akka.routing.RoundRobinPool;
  * The Class DefaultAkkaService.
  */
 @Service
-public class DefaultAkkaService implements AkkaService {
+public class DefaultAkkaService implements AkkaService, NodeStateChangeCallback {
 
     public static final String IO_DISPATCHER_NAME = "io-dispatcher";
     public static final String CORE_DISPATCHER_NAME = "core-dispatcher";
@@ -79,6 +83,9 @@ public class DefaultAkkaService implements AkkaService {
     @Autowired
     private AkkaContext context;
 
+    @Autowired
+    private MonitoringService monitoringService;
+
     private AkkaEventServiceListener listener;
 
     private StatusListenerThread statusListenerThread;
@@ -103,6 +110,9 @@ public class DefaultAkkaService implements AkkaService {
         listener = new AkkaEventServiceListener(opsActor);
         context.getEventService().addListener(listener);
         LOG.info("Initializing Akka system done");
+        LOG.info("Registering Akka system for monitoring...");
+        monitoringService.registerStatistics("Akka system", this);
+        LOG.info("Registering Akka system for monitoring done.");
     }
 
     /*
@@ -181,6 +191,11 @@ public class DefaultAkkaService implements AkkaService {
     public void removeStatusListener() {
         this.statusListenerThread.stopped = true;
         this.statusListenerThread.interrupt();
+    }
+
+    @Override
+    public void onStateChange(NodeState state) {
+        ioRouter.tell(new Broadcast(new NodeStateChangeMessage(state)), ActorRef.noSender());
     }
 
     public class StatusListenerThread extends Thread {

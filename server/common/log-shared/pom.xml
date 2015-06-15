@@ -39,6 +39,10 @@
         </dependency>
         <dependency>
             <groupId>org.kaaproject.kaa.server.common</groupId>
+            <artifactId>monitoring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kaaproject.kaa.server.common</groupId>
             <artifactId>utils</artifactId>
         </dependency>
         <dependency>

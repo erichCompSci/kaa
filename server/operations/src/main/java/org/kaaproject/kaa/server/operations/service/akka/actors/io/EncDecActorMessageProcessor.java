@@ -76,9 +76,9 @@ public class EncDecActorMessageProcessor {
     private final MeterClient redirectMeter;
     private final MeterClient errorMeter;
 
-    protected EncDecActorMessageProcessor(ActorRef epsActor, AkkaContext context, Set<String> platformProtocols) {
+    protected EncDecActorMessageProcessor(ActorRef opsActor, AkkaContext context, Set<String> platformProtocols) {
         super();
-        this.opsActor = epsActor;
+        this.opsActor = opsActor;
         this.cacheService = context.getCacheService();
         this.supportUnencryptedConnection = context.getSupportUnencryptedConnection();
         this.crypt = new MessageEncoderDecoder(context.getKeyStoreService().getPrivateKey(), context.getKeyStoreService().getPublicKey());
@@ -167,6 +167,18 @@ public class EncDecActorMessageProcessor {
         }
     }
 
+    void processDisconnectDueOverload(SessionInitMessage message) {
+        processErrors(message.getChannelContext(), message.getErrorBuilder(), new Exception("Operations node is overloaded"));
+    }
+
+    void processDisconnectDueOverload(SessionAwareMessage message) {
+        processErrors(message.getChannelContext(), message.getErrorBuilder(), new Exception("Operations node is overloaded"));
+    }
+
+    void processDisconnectDueOverload(SessionResponse message) {
+        processErrors(message.getChannelContext(), message.getErrorBuilder(), new Exception("Operations node is overloaded"));
+    }
+
     private ServerSync buildRedirectionResponse(RedirectionRule redirection, ClientSync request) {
         RedirectServerSync redirectSyncResponse = new RedirectServerSync(redirection.getAccessPointId());
         ServerSync response = new ServerSync();
@@ -216,7 +228,7 @@ public class EncDecActorMessageProcessor {
         if (session.isEncrypted()) {
             crypt.setSessionCipherPair(session.getCipherPair());
             responseData = crypt.encodeData(responseData);
-            LOG.trace("Response data crypted");
+            LOG.trace("Response data encoded");
         }
         ChannelContext context = message.getSessionInfo().getCtx();
         MessageBuilder converter = message.getMessageBuilder();
@@ -236,7 +248,7 @@ public class EncDecActorMessageProcessor {
         } else if (supportUnencryptedConnection) {
             syncRequest = decodeUnencryptedRequest(message);
         } else {
-            LOG.warn("Received unencripted init message, but unencrypted connection forbidden by configuration.");
+            LOG.warn("Received unencrypted init message, but unencrypted connection forbidden by configuration.");
             throw new GeneralSecurityException("Unencrypted connection forbidden by configuration.");
         }
         return syncRequest;

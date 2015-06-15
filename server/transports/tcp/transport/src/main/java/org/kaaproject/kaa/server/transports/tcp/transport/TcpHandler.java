@@ -79,9 +79,9 @@ public class TcpHandler extends SimpleChannelInboundHandler<AbstractKaaTcpComman
 
     private final static MessageBuilder syncResponseConverter = new MessageBuilder() {
         @Override
-        public Object[] build(byte[] encriptedResponseData, byte[] encriptedResponseSignature, boolean isEncrypted) {
+        public Object[] build(byte[] encryptedResponseData, byte[] encryptedResponseSignature, boolean isEncrypted) {
             Object[] responses = new Object[1];
-            responses[0] = new org.kaaproject.kaa.common.channels.protocols.kaatcp.messages.SyncResponse(encriptedResponseData, NOT_ZIPPED,
+            responses[0] = new org.kaaproject.kaa.common.channels.protocols.kaatcp.messages.SyncResponse(encryptedResponseData, NOT_ZIPPED,
                     isEncrypted);
             LOG.debug("Sending {} response objects", responses.length);
             return responses;
@@ -116,7 +116,7 @@ public class TcpHandler extends SimpleChannelInboundHandler<AbstractKaaTcpComman
             volatile boolean connAckSent = false;
 
             @Override
-            public Object[] build(byte[] encriptedResponseData, byte[] encriptedResponseSignature, boolean isEncrypted) {
+            public Object[] build(byte[] encryptedResponseData, byte[] encryptedResponseSignature, boolean isEncrypted) {
                 if (!connAckSent) {
                     synchronized (this) {
                         if (!connAckSent) {
@@ -124,13 +124,13 @@ public class TcpHandler extends SimpleChannelInboundHandler<AbstractKaaTcpComman
                             Object[] responses = new Object[2];
                             responses[0] = new ConnAck(ReturnCode.ACCEPTED);
                             responses[1] = new org.kaaproject.kaa.common.channels.protocols.kaatcp.messages.SyncResponse(
-                                    encriptedResponseData, NOT_ZIPPED, isEncrypted);
+                                    encryptedResponseData, NOT_ZIPPED, isEncrypted);
                             LOG.debug("Sending {} response objects", responses.length);
                             return responses;
                         }
                     }
                 }
-                return syncResponseConverter.build(encriptedResponseData, encriptedResponseSignature, isEncrypted);
+                return syncResponseConverter.build(encryptedResponseData, encryptedResponseSignature, isEncrypted);
             }
 
             @Override

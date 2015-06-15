@@ -2,15 +2,15 @@ package org.kaaproject.kaa.server.common.monitoring;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TaskStatisticInfo {
+public class MonitoringInfo {
 
-    private StateChangeCallback callback;
+    private NodeStateChangeCallback callback;
     private AtomicInteger inputTasks = new AtomicInteger();
     private AtomicInteger successTasks = new AtomicInteger();
     private AtomicInteger failureTasks = new AtomicInteger();
     private AtomicInteger pendingTasks = new AtomicInteger();
 
-    public TaskStatisticInfo(StateChangeCallback callback) {
+    public MonitoringInfo(NodeStateChangeCallback callback) {
         this.callback = callback;
     }
 
@@ -45,7 +45,7 @@ public class TaskStatisticInfo {
         return pendingTasks.getAndSet(0);
     }
 
-    public StateChangeCallback getCallback() {
+    public NodeStateChangeCallback getCallback() {
         return callback;
     }
 }

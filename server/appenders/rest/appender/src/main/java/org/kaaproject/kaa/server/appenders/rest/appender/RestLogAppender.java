@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -134,7 +135,7 @@ public class RestLogAppender extends AbstractLogAppender<RestConfig> {
                             try {
                                 int responseCode = response.getStatusLine().getStatusCode();
                                 LOG.trace("[{}] received {} response code", RestLogAppender.this.getApplicationToken(), response);
-                                if (responseCode >= 200 && responseCode < 400) {
+                                if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
                                     LOG.trace("[{}] logs appended successfully", getName());
                                     listener.onSuccess();
                                 } else {

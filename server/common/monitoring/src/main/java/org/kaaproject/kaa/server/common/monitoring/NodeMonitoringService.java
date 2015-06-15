@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -16,22 +17,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.kaaproject.kaa.server.common.monitoring.MachineStateType.OVERLOADED;
+import static org.kaaproject.kaa.server.common.monitoring.NodeState.OVERLOADED;
 
 @Service
-public class JVMMonitoringService {
+public class NodeMonitoringService implements MonitoringService {
 
     /**
      * The Constant LOG.
      */
-    private static final Logger LOG = LoggerFactory.getLogger(JVMMonitoringService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NodeMonitoringService.class);
     /**
      * The Constant MB.
      */
     private static final int MB = 1024 * 1024;
 
     private Runtime runtime = Runtime.getRuntime();
-    private Map<String, TaskStatisticInfo> registered = new ConcurrentHashMap<>();
+    private Map<String, MonitoringInfo> registered = new ConcurrentHashMap<>();
     private List<GarbageCollectorMXBean> gcMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
     private OperatingSystemMXBean systemMXBean = ManagementFactory.getOperatingSystemMXBean();
 
@@ -41,13 +42,13 @@ public class JVMMonitoringService {
     private long totalGCCount = 0;
     private long totalGCTime = 0;
 
-    private MachineStateType state;
+    private NodeState state;
 
     @Autowired
     private MonitoringOptions options;
 
-    public JVMMonitoringService() {
-        state = MachineStateType.NORMAL;
+    public NodeMonitoringService() {
+        state = NodeState.NORMAL;
     }
 
     @PostConstruct
@@ -61,6 +62,7 @@ public class JVMMonitoringService {
         }, options.getPrintStatisticsDelay(), options.getPrintStatisticPeriod(), TimeUnit.MILLISECONDS);
     }
 
+    @PreDestroy
     public void stop() {
         LOG.info("Stop JVM monitoring service...");
         checkStateScheduler.shutdown();
@@ -81,9 +83,9 @@ public class JVMMonitoringService {
     private void updateStatistics() {
         calculate();
         if (options.isPrintResourceUsageInfo()) {
-            for (Map.Entry<String, TaskStatisticInfo> entry : registered.entrySet()) {
+            for (Map.Entry<String, MonitoringInfo> entry : registered.entrySet()) {
                 String name = entry.getKey();
-                TaskStatisticInfo info = entry.getValue();
+                MonitoringInfo info = entry.getValue();
                 int input = info.getInputTasksCount();
                 int success = info.getSuccessTasksCount();
                 int failure = info.getFailureTasksCount();
@@ -94,9 +96,10 @@ public class JVMMonitoringService {
         }
     }
 
-    public TaskStatisticInfo registerStatistics(String name, StateChangeCallback callback) {
+    @Override
+    public MonitoringInfo registerStatistics(String name, NodeStateChangeCallback callback) {
         LOG.info("Register statistics with name {}", name);
-        TaskStatisticInfo statistic = new TaskStatisticInfo(callback);
+        MonitoringInfo statistic = new MonitoringInfo(callback);
         registered.put(name, statistic);
         if (OVERLOADED == state) {
             callback.onStateChange(state);
@@ -107,7 +110,7 @@ public class JVMMonitoringService {
     private void onChangeState() {
         LOG.info("Execute on changing state callbacks.");
         if (!registered.isEmpty()) {
-            for (Map.Entry<String, TaskStatisticInfo> entry : registered.entrySet()) {
+            for (Map.Entry<String, MonitoringInfo> entry : registered.entrySet()) {
                 entry.getValue().getCallback().onStateChange(state);
             }
         }
@@ -144,7 +147,7 @@ public class JVMMonitoringService {
         return bytes / MB;
     }
 
-    private void updateState(MachineStateType currentState) {
+    private void updateState(NodeState currentState) {
         if (OVERLOADED.equals(currentState) && !OVERLOADED.equals(state)) {
             recoveryStateScheduler.schedule(new RecoveryCheckRunner(), options.getRejectRequestPeriod(), TimeUnit.MILLISECONDS);
         }
@@ -162,7 +165,7 @@ public class JVMMonitoringService {
 
     private int getPendingTaskCount() {
         int count = 0;
-        for (Map.Entry<String, TaskStatisticInfo> entry : registered.entrySet()) {
+        for (Map.Entry<String, MonitoringInfo> entry : registered.entrySet()) {
             count += entry.getValue().getPendingTasksCount();
         }
         return count;
@@ -172,7 +175,7 @@ public class JVMMonitoringService {
         @Override
         public void run() {
             if (isRecovered()) {
-                updateState(MachineStateType.NORMAL);
+                updateState(NodeState.NORMAL);
             } else {
                 recoveryStateScheduler.schedule(new RecoveryCheckRunner(), options.getRejectRequestPeriod(), TimeUnit.MILLISECONDS);
             }

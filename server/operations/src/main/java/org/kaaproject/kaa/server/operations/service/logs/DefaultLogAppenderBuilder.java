@@ -17,14 +17,20 @@ package org.kaaproject.kaa.server.operations.service.logs;
 
 import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogAppender;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringOptions;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DefaultLogAppenderBuilder implements LogAppenderBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultLogAppenderBuilder.class);
+
+    @Autowired
+    private MonitoringService monitoringService;
 
     public DefaultLogAppenderBuilder() {
         super();
@@ -37,13 +43,13 @@ public class DefaultLogAppenderBuilder implements LogAppenderBuilder {
         }
         try {
             @SuppressWarnings("unchecked")
-            Class<LogAppender> appenderClass = (Class<LogAppender>) Class
-                    .forName(appenderConfig.getPluginClassName());
+            Class<LogAppender> appenderClass = (Class<LogAppender>) Class.forName(appenderConfig.getPluginClassName());
             LogAppender logAppender = appenderClass.newInstance();
             LOG.debug("Init log appender [{}] with appender configuration {[]}.", logAppender, appenderConfig);
             logAppender.setName(appenderConfig.getName());
             logAppender.setAppenderId(appenderConfig.getId());
             logAppender.setApplicationToken(appenderConfig.getApplicationToken());
+            logAppender.setMonitoringService(monitoringService);
             logAppender.init(appenderConfig);
             return logAppender;
         } catch (ClassNotFoundException e) {
