@@ -50,6 +50,7 @@ public interface SandboxConstants {
     public static final String CHANGE_KAA_HOST = "change_kaa_host.sh";
 
     public static final String DOCKERFILE_TEMPLATE = "Dockerfile.template";
+    public static final String DOCKERFILE_ANDROID_SDK_PART = "Dockerfile.android_sdk_part";
     public static final String DOCKERFILE = "Dockerfile";
     public static final String DOCKER_BUILD_PATH = "sandbox/builder/target/docker/";
 

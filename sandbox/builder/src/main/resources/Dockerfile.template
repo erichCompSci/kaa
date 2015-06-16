@@ -2,6 +2,10 @@ FROM ubuntu:latest
 
 MAINTAINER Sergii Yemets <syemets@cybervisiontech.com>
 
+RUN apt-get update && apt-get install -y sudo
+
+RUN echo "kaa ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 # add user kaa
 RUN useradd -s /bin/bash kaa
 
@@ -35,36 +39,18 @@ RUN apt-get install -y mongodb && \
   echo ${MONGO_DB_PATH} >> /etc/mongod.conf
 
 
-RUN apt-get install -y ant whiptail apt-utils netcat
-
-
-# install Android SDK
-ENV ANDROID_SDK_VERSION r24.2
-ENV ANDROID_API_LEVEL 21
-ENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox
-ENV KAA_HOME /home/kaa
-ENV ANDROID_BUILD_TOOLS_VERSION 21.1.1
-ENV ANDROID_HOME ${KAA_SANDBOX_HOME}/android-sdk-linux
-
-
-RUN echo "export ANDROID_HOME=${ANDROID_HOME}" >> /etc/profile
-ENV PATH ${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
-
-# install android sdk dependencies
-RUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386
-
-RUN apt-get install -y wget && \
-  mkdir -p ${KAA_SANDBOX_HOME} && \
-  wget -qO- "http://dl.google.com/android/android-sdk_${ANDROID_SDK_VERSION}-linux.tgz" \
-  | tar -zxv -C ${KAA_SANDBOX_HOME} && \
-  echo y | ${ANDROID_HOME}/tools/android update sdk --no-ui --all --filter platform-tool,android-${ANDROID_API_LEVEL},sysimg-${ANDROID_API_LEVEL},build-tools-${ANDROID_BUILD_TOOLS_VERSION}
-
 
 # install zookeper
 RUN wget -q -O - http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz | tar -xzf - -C /opt \
     && mv /opt/zookeeper-3.4.6 /opt/zookeeper \
     && cp /opt/zookeeper/conf/zoo_sample.cfg /opt/zookeeper/conf/zoo.cfg \
     && mkdir -p /tmp/zookeeper
+
+RUN apt-get install -y ant whiptail apt-utils netcat curl
+
+
+ENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox
+ENV KAA_HOME /home/kaa
 
 
 # autostart services

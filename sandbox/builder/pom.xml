@@ -150,7 +150,7 @@
                                     <artifactId>meta-builder</artifactId>
                                     <version>${project.version}</version>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${base.path}</outputDirectory>
+                                    <outputDirectory>${base.path}/..</outputDirectory>
                                     <destFileName>meta-builder.jar</destFileName>
                                 </artifactItem>
                                 <artifactItem>

@@ -89,6 +89,7 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
 
+        transferFile(basePath.getAbsolutePath()+"/../"+META_BUILDER_JAR,SANDBOX_FOLDER);
         buildSandboxMeta();
 
     }
