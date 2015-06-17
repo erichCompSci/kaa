@@ -89,16 +89,18 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);
         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);
 
-        transferFile(basePath.getAbsolutePath()+"/../"+META_BUILDER_JAR,SANDBOX_FOLDER);
+        transferFile(basePath.getAbsolutePath() + "/../" + META_BUILDER_JAR, SANDBOX_FOLDER);
         buildSandboxMeta();
 
     }
 
-    private void buildSandboxMeta() throws Exception{
+    private void buildSandboxMeta() throws Exception {
         LOG.info("BUILDING SANDBOX META...");
         buildSandboxMetaImpl();
         LOG.info("SANDBOX META BUILD FINISHED");
-    };
+    }
+
+    ;
 
     private void provisionBox() throws Exception {
         provisionBoxImpl();
@@ -116,8 +118,9 @@ public abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand
 
 
     private void unprovisionBox() throws Exception {
-        unprovisionBoxImpl();
         executeSudoSandboxCommand("rm -rf " + "/" + SHARED_FOLDER);
+        executeSudoSandboxCommand("rm -f " + SANDBOX_FOLDER + "/" + META_BUILDER_JAR);
+        unprovisionBoxImpl();
     }
 
     protected void build() throws Exception {

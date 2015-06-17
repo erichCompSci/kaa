@@ -1,0 +1,197 @@
+[1mdiff --git a/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/VeryAbstractSandboxBuilder.java b/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/VeryAbstractSandboxBuilder.java[m
+[1mindex f248ef0..43937da 100644[m
+[1m--- a/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/VeryAbstractSandboxBuilder.java[m
+[1m+++ b/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/VeryAbstractSandboxBuilder.java[m
+[36m@@ -89,16 +89,18 @@[m [mpublic abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand[m
+         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + CHANGE_KAA_HOST);[m
+         executeSudoSandboxCommand("chmod +x " + SANDBOX_FOLDER + "/" + SANDBOX_SPLASH_PY);[m
+ [m
+[31m-        transferFile(basePath.getAbsolutePath()+"/../"+META_BUILDER_JAR,SANDBOX_FOLDER);[m
+[32m+[m[32m        transferFile(basePath.getAbsolutePath() + "/../" + META_BUILDER_JAR, SANDBOX_FOLDER);[m
+         buildSandboxMeta();[m
+ [m
+     }[m
+ [m
+[31m-    private void buildSandboxMeta() throws Exception{[m
+[32m+[m[32m    private void buildSandboxMeta() throws Exception {[m
+         LOG.info("BUILDING SANDBOX META...");[m
+         buildSandboxMetaImpl();[m
+         LOG.info("SANDBOX META BUILD FINISHED");[m
+[31m-    };[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    ;[m
+ [m
+     private void provisionBox() throws Exception {[m
+         provisionBoxImpl();[m
+[36m@@ -116,8 +118,9 @@[m [mpublic abstract class VeryAbstractSandboxBuilder implements SandboxBuilder, Sand[m
+ [m
+ [m
+     private void unprovisionBox() throws Exception {[m
+[31m-        unprovisionBoxImpl();[m
+         executeSudoSandboxCommand("rm -rf " + "/" + SHARED_FOLDER);[m
+[32m+[m[32m        executeSudoSandboxCommand("rm -f " + SANDBOX_FOLDER + "/" + META_BUILDER_JAR);[m
+[32m+[m[32m        unprovisionBoxImpl();[m
+     }[m
+ [m
+     protected void build() throws Exception {[m
+[1mdiff --git a/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/docker/DockerSandboxBuilder.java b/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/docker/DockerSandboxBuilder.java[m
+[1mindex 283b78f..257eaf0 100644[m
+[1m--- a/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/docker/DockerSandboxBuilder.java[m
+[1m+++ b/sandbox/builder/src/main/java/org/kaaproject/kaa/sandbox/docker/DockerSandboxBuilder.java[m
+[36m@@ -42,7 +42,6 @@[m [mpublic class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {[m
+ [m
+     @Override[m
+     protected void buildSandboxMetaImpl() throws Exception {[m
+[31m-        executeSudoSandboxCommand(org.kaaproject.kaa.server.common.utils.FileUtils.readResource(DOCKERFILE_ANDROID_SDK_PART));[m
+         executeSudoSandboxCommand("service postgresql start && su - postgres -c " +[m
+                 "\"psql --command \\\\\"alter user postgres with password 'admin';\\\\\" && " +[m
+                 "psql --command \\\\\"CREATE DATABASE kaa;\\\\\"\" && "+[m
+[1mdiff --git a/sandbox/builder/src/main/resources/Dockerfile.android_sdk_part b/sandbox/builder/src/main/resources/Dockerfile.android_sdk_part[m
+[1mindex e13d337..5578573 100644[m
+[1m--- a/sandbox/builder/src/main/resources/Dockerfile.android_sdk_part[m
+[1m+++ b/sandbox/builder/src/main/resources/Dockerfile.android_sdk_part[m
+[36m@@ -1,21 +1,21 @@[m
+[31m-ENV ANDROID_HOME ${KAA_SANDBOX_HOME}/android-sdk-linux[m
+[31m-ENV PATH $PATH:$ANDROID_HOME/tools[m
+[31m-ENV PATH $PATH:$ANDROID_HOME/platform-tools[m
+[32m+[m[32mENV ANDROID_HOME \${KAA_SANDBOX_HOME}/android-sdk-linux[m
+[32m+[m[32mENV PATH \$PATH:\$ANDROID_HOME/tools[m
+[32m+[m[32mENV PATH \$PATH:\$ANDROID_HOME/platform-tools[m
+ [m
+ # install android sdk dependencies[m
+[31m-RUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386[m
+[32m+[m[32mRUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386  && apt-get -y autoremove[m
+ [m
+[31m-RUN cd $KAA_SANDBOX_HOME && curl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && tar xf android-sdk_r24.0.2-linux.tgz[m
+[32m+[m[32mRUN cd \$KAA_SANDBOX_HOME && curl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && tar xf android-sdk_r24.0.2-linux.tgz  && rm -f android-sdk_r24.0.2-linux.tgz[m
+ [m
+[31m-RUN while :;  do  echo y; sleep 2;  done | $ANDROID_HOME/tools/android update sdk --filter 'android-21,build-tools-21.1.2,tool,platform-tool' --no-ui --force -a[m
+[32m+[m[32mRUN while :;  do  echo y; sleep 2;  done | \$ANDROID_HOME/tools/android update sdk --filter 'android-21,build-tools-21.1.2,tool,platform-tool' --no-ui --force -a[m
+ [m
+[31m-RUN sed -i '484i<property name="aidl" location="${android.build.tools.dir}/aidl${exe}" />' $ANDROID_HOME/tools/ant/build.xml[m
+[31m-RUN sed -i '485i<property name="aapt" location="${android.build.tools.dir}/aapt${exe}" />' $ANDROID_HOME/tools/ant/build.xml[m
+[31m-RUN sed -i '486i<property name="dx" location="${android.build.tools.dir}/dx${bat}" />' $ANDROID_HOME/tools/ant/build.xml[m
+[31m-RUN sed -i '487i<property name="zipalign" location="${android.build.tools.dir}/zipalign${exe}" />' $ANDROID_HOME/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '484i<property name="aidl" location="\${android.build.tools.dir}/aidl\${exe}" />' \$ANDROID_HOME/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '485i<property name="aapt" location="\${android.build.tools.dir}/aapt\${exe}" />' \$ANDROID_HOME/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '486i<property name="dx" location="\${android.build.tools.dir}/dx\${bat}" />' \$ANDROID_HOME/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '487i<property name="zipalign" location="\${android.build.tools.dir}/zipalign\${exe}" />' \$ANDROID_HOME/tools/ant/build.xml[m
+ [m
+ RUN keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US"[m
+ [m
+[31m-RUN cp -r /root/.android $ANDROID_HOME/[m
+[32m+[m[32mRUN cp -r /root/.android \$ANDROID_HOME/[m
+ [m
+[31m-RUN echo "ANDROID_SDK_HOME=\"/usr/lib/kaa-sandbox/android-sdk-linux\"" >> /etc/environment[m
+\ No newline at end of file[m
+[32m+[m[32mRUN echo "ANDROID_SDK_HOME=\\"/usr/lib/kaa-sandbox/android-sdk-linux\\"" >> /etc/environment[m
+\ No newline at end of file[m
+[1mdiff --git a/sandbox/builder/src/main/resources/Dockerfile.template b/sandbox/builder/src/main/resources/Dockerfile.template[m
+[1mindex 34d8961..61fd88e 100644[m
+[1m--- a/sandbox/builder/src/main/resources/Dockerfile.template[m
+[1m+++ b/sandbox/builder/src/main/resources/Dockerfile.template[m
+[36m@@ -2,7 +2,7 @@[m [mFROM ubuntu:latest[m
+ [m
+ MAINTAINER Sergii Yemets <syemets@cybervisiontech.com>[m
+ [m
+[31m-RUN apt-get update && apt-get install -y sudo[m
+[32m+[m[32mRUN apt-get update && apt-get install -y sudo && apt-get -y autoremove[m
+ [m
+ RUN echo "kaa ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers[m
+ [m
+[36m@@ -15,60 +15,80 @@[m [mRUN echo kaa:kaa | chpasswd[m
+ # add kaa to sudo group[m
+ RUN usermod -a -G sudo kaa[m
+ [m
+[32m+[m[32mENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox[m
+[32m+[m[32mENV KAA_HOME /home/kaa[m
+[32m+[m
+ # install oracle java7 jdk[m
+ RUN sudo echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | \[m
+     sudo /usr/bin/debconf-set-selections && \[m
+[31m-  apt-get install -y software-properties-common && \[m
+[31m-  add-apt-repository -y ppa:webupd8team/java && \[m
+[31m-  apt-get update && apt-get install -y oracle-java7-installer[m
+[32m+[m[32m    echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \[m
+[32m+[m[32m    echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \[m
+[32m+[m[32m    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \[m
+[32m+[m[32m    apt-get update && apt-get install -y oracle-java7-installer && apt-get -y autoremove[m
+[32m+[m
+[32m+[m[32m# install android sdk[m
+[32m+[m[32mENV ANDROID_HOME ${KAA_SANDBOX_HOME}/android-sdk-linux[m
+[32m+[m[32mENV PATH $PATH:$ANDROID_HOME/tools[m
+[32m+[m[32mENV PATH $PATH:$ANDROID_HOME/platform-tools[m
+[32m+[m
+[32m+[m[32mRUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386 curl && apt-get -y autoremove[m
+[32m+[m
+[32m+[m[32mRUN cd /usr/local/ && curl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && tar xf android-sdk_r24.0.2-linux.tgz && rm -f android-sdk_r24.0.2-linux.tgz[m
+[32m+[m
+[32m+[m[32mRUN while :;  do  echo y; sleep 2;  done | /usr/local/android-sdk-linux/tools/android update sdk --filter 'android-21,build-tools-21.1.2,tool,platform-tool' --no-ui --force -a[m
+[32m+[m
+[32m+[m[32mRUN sed -i '484i<property name="aidl" location="${android.build.tools.dir}/aidl${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '485i<property name="aapt" location="${android.build.tools.dir}/aapt${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '486i<property name="dx" location="${android.build.tools.dir}/dx${bat}" />' /usr/local/android-sdk-linux/tools/ant/build.xml[m
+[32m+[m[32mRUN sed -i '487i<property name="zipalign" location="${android.build.tools.dir}/zipalign${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml[m
+[32m+[m
+[32m+[m[32mRUN echo "ANDROID_SDK_HOME=\"$ANDROID_HOME\"" >> /etc/environment[m
+[32m+[m
+ [m
+ # install cassandra[m
+ RUN apt-get install -y curl && \[m
+   echo "deb http://debian.datastax.com/community stable main" | sudo tee -a /etc/apt/sources.list.d/datastax.sources.list && \[m
+   curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add - && \[m
+   apt-get update && \[m
+[31m-  apt-get install -y dsc21[m
+[32m+[m[32m  apt-get install -y dsc21 && apt-get -y autoremove[m
+ [m
+ # install postgresql[m
+[31m-RUN apt-get install -y postgresql postgresql-contrib postgresql-client[m
+[32m+[m[32mRUN apt-get install -y postgresql postgresql-contrib && apt-get -y autoremove[m
+ [m
+ [m
+ # install mongodb[m
+ ENV MONGO_DB_PATH /var/lib/mongodb[m
+[31m-RUN apt-get install -y mongodb && \[m
+[32m+[m[32mRUN apt-get install -y mongodb-dev && \[m
+   echo ${MONGO_DB_PATH} >> /etc/mongod.conf[m
+ [m
+ [m
+[31m-[m
+ # install zookeper[m
+ RUN wget -q -O - http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz | tar -xzf - -C /opt \[m
+     && mv /opt/zookeeper-3.4.6 /opt/zookeeper \[m
+     && cp /opt/zookeeper/conf/zoo_sample.cfg /opt/zookeeper/conf/zoo.cfg \[m
+     && mkdir -p /tmp/zookeeper[m
+ [m
+[31m-RUN apt-get install -y ant whiptail apt-utils netcat curl[m
+[32m+[m[32mRUN apt-get install -y ant whiptail apt-utils netcat && apt-get -y autoremove[m
+ [m
+[31m-[m
+[31m-ENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox[m
+[31m-ENV KAA_HOME /home/kaa[m
+[32m+[m[32m# generate android debug key[m
+[32m+[m[32mRUN keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US"[m
+ [m
+ [m
+ # autostart services[m
+ RUN echo "/opt/zookeeper/bin/zkServer.sh start"  >> /etc/bash.bashrc[m
+ RUN echo "service mongodb start" >> /etc/bash.bashrc[m
+ [m
+[31m-[m
+ ${kaa_dockerfile_part}[m
+ [m
+[32m+[m[32mRUN apt-get -y remove whiptail apt-utils netcat curl software-properties-common && apt-get -y autoremove[m
+ [m
+ RUN echo "service postgresql start"  >> /etc/bash.bashrc[m
+ [m
+ VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"][m
+ [m
+ [m
+[31m-RUN sed -i "s/gui_change_host_enabled=true/gui_change_host_enabled=false/g" /usr/lib/kaa-admin/conf/sandbox-server.properties[m
+[31m-[m
+ RUN echo "service kaa-bootstrap start"  >> /etc/bash.bashrc[m
+ RUN echo "service kaa-operations start"  >> /etc/bash.bashrc[m
+ RUN echo "service kaa-control start"  >> /etc/bash.bashrc[m
+ RUN echo "service kaa-admin start"  >> /etc/bash.bashrc[m
+[41m+[m

@@ -42,7 +42,6 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     @Override
     protected void buildSandboxMetaImpl() throws Exception {
-        executeSudoSandboxCommand(org.kaaproject.kaa.server.common.utils.FileUtils.readResource(DOCKERFILE_ANDROID_SDK_PART));
         executeSudoSandboxCommand("service postgresql start && su - postgres -c " +
                 "\"psql --command \\\\\"alter user postgres with password 'admin';\\\\\" && " +
                 "psql --command \\\\\"CREATE DATABASE kaa;\\\\\"\" && "+

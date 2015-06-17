@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 MAINTAINER Sergii Yemets <syemets@cybervisiontech.com>
 
-RUN apt-get update && apt-get install -y sudo
+RUN apt-get update && apt-get install -y sudo && apt-get -y autoremove
 
 RUN echo "kaa ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
@@ -15,29 +15,51 @@ RUN echo kaa:kaa | chpasswd
 # add kaa to sudo group
 RUN usermod -a -G sudo kaa
 
+ENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox
+ENV KAA_HOME /home/kaa
+
 # install oracle java7 jdk
 RUN sudo echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | \
     sudo /usr/bin/debconf-set-selections && \
-  apt-get install -y software-properties-common && \
-  add-apt-repository -y ppa:webupd8team/java && \
-  apt-get update && apt-get install -y oracle-java7-installer
+    echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
+    echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
+    apt-get update && apt-get install -y oracle-java7-installer && apt-get -y autoremove
+
+# install android sdk
+ENV ANDROID_HOME ${KAA_SANDBOX_HOME}/android-sdk-linux
+ENV PATH $PATH:$ANDROID_HOME/tools
+ENV PATH $PATH:$ANDROID_HOME/platform-tools
+
+RUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386 curl && apt-get -y autoremove
+
+RUN cd /usr/local/ && curl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && tar xf android-sdk_r24.0.2-linux.tgz && rm -f android-sdk_r24.0.2-linux.tgz
+
+RUN while :;  do  echo y; sleep 2;  done | /usr/local/android-sdk-linux/tools/android update sdk --filter 'android-21,build-tools-21.1.2,tool,platform-tool' --no-ui --force -a
+
+RUN sed -i '484i<property name="aidl" location="${android.build.tools.dir}/aidl${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml
+RUN sed -i '485i<property name="aapt" location="${android.build.tools.dir}/aapt${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml
+RUN sed -i '486i<property name="dx" location="${android.build.tools.dir}/dx${bat}" />' /usr/local/android-sdk-linux/tools/ant/build.xml
+RUN sed -i '487i<property name="zipalign" location="${android.build.tools.dir}/zipalign${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml
+
+RUN echo "ANDROID_SDK_HOME=\"$ANDROID_HOME\"" >> /etc/environment
+
 
 # install cassandra
 RUN apt-get install -y curl && \
   echo "deb http://debian.datastax.com/community stable main" | sudo tee -a /etc/apt/sources.list.d/datastax.sources.list && \
   curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add - && \
   apt-get update && \
-  apt-get install -y dsc21
+  apt-get install -y dsc21 && apt-get -y autoremove
 
 # install postgresql
-RUN apt-get install -y postgresql postgresql-contrib postgresql-client
+RUN apt-get install -y postgresql postgresql-contrib && apt-get -y autoremove
 
 
 # install mongodb
 ENV MONGO_DB_PATH /var/lib/mongodb
-RUN apt-get install -y mongodb && \
+RUN apt-get install -y mongodb-dev && \
   echo ${MONGO_DB_PATH} >> /etc/mongod.conf
-
 
 
 # install zookeper
@@ -46,29 +68,27 @@ RUN wget -q -O - http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookee
     && cp /opt/zookeeper/conf/zoo_sample.cfg /opt/zookeeper/conf/zoo.cfg \
     && mkdir -p /tmp/zookeeper
 
-RUN apt-get install -y ant whiptail apt-utils netcat curl
+RUN apt-get install -y ant whiptail apt-utils netcat && apt-get -y autoremove
 
-
-ENV KAA_SANDBOX_HOME /usr/lib/kaa-sandbox
-ENV KAA_HOME /home/kaa
+# generate android debug key
+RUN keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US"
 
 
 # autostart services
 RUN echo "/opt/zookeeper/bin/zkServer.sh start"  >> /etc/bash.bashrc
 RUN echo "service mongodb start" >> /etc/bash.bashrc
 
-
 ${kaa_dockerfile_part}
 
+RUN apt-get -y remove whiptail apt-utils netcat curl software-properties-common && apt-get -y autoremove
 
 RUN echo "service postgresql start"  >> /etc/bash.bashrc
 
 VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 
 
-RUN sed -i "s/gui_change_host_enabled=true/gui_change_host_enabled=false/g" /usr/lib/kaa-admin/conf/sandbox-server.properties
-
 RUN echo "service kaa-bootstrap start"  >> /etc/bash.bashrc
 RUN echo "service kaa-operations start"  >> /etc/bash.bashrc
 RUN echo "service kaa-control start"  >> /etc/bash.bashrc
 RUN echo "service kaa-admin start"  >> /etc/bash.bashrc
+
