@@ -21,7 +21,7 @@ import akka.actor.ActorRef;
 
 public class MultiLogDeliveryCallback extends AbstractActorCallback {
 
-    private final AtomicInteger appendersCount;
+    protected final AtomicInteger appendersCount;
 
     /**
      * Instantiates a new actor log delivery callback.

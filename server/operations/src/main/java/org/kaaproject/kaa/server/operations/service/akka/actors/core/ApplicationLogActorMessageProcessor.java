@@ -20,16 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.kaaproject.kaa.server.common.dao.ApplicationService;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogAppender;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogDeliveryCallback;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogDeliveryErrorCode;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogSchema;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringState;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
+import org.kaaproject.kaa.server.operations.service.akka.AkkaContext;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.LogDeliveryMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.LogEventPackMessage;
-import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.MultiLogDeliveryCallback;
-import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.SingleLogDeliveryCallback;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.MonitoringMultiLogDeliveryCallback;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.MonitoringSingleLogDeliveryCallback;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.MonitoringVoidCallback;
 import org.kaaproject.kaa.server.operations.service.logs.LogAppenderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,18 +55,17 @@ public class ApplicationLogActorMessageProcessor {
 
     private final Map<Integer, LogSchema> logSchemas;
 
-    private final VoidCallback voidCallback;
+    private final MonitoringState monitoringState;
 
-    public ApplicationLogActorMessageProcessor(LogAppenderService logAppenderService, ApplicationService applicationService,
-            String applicationToken) {
+    public ApplicationLogActorMessageProcessor(AkkaContext context, String applicationToken) {
         super();
-        this.logAppenderService = logAppenderService;
+        this.logAppenderService = context.getLogAppenderService();
         this.applicationToken = applicationToken;
-        this.applicationId = applicationService.findAppByApplicationToken(applicationToken).getId();
+        this.applicationId = context.getApplicationService().findAppByApplicationToken(applicationToken).getId();
         this.logAppenders = new HashMap<>();
         this.logAppendersCache = new HashMap<>();
         this.logSchemas = new HashMap<>();
-        this.voidCallback = new VoidCallback();
+        this.monitoringState = context.getMonitoringService().createMonitoringState("Kaa log appenders");
         for (LogAppender appender : logAppenderService.getApplicationAppenders(applicationId)) {
             logAppenders.put(appender.getAppenderId(), appender);
         }
@@ -76,19 +77,24 @@ public class ApplicationLogActorMessageProcessor {
         List<LogAppender> required = filterAppenders(logSchema.getVersion(), true);
         List<LogAppender> optional = filterAppenders(logSchema.getVersion(), false);
         if (required.size() > 0 || optional.size() > 0) {
+            int logCount = message.getLogCount();
             for (LogAppender logAppender : optional) {
-                logAppender.doAppend(message.getLogEventPack(), voidCallback);
+                monitoringState.appendInputTaskCount(logCount);
+                logAppender.doAppend(message.getLogEventPack(), new MonitoringVoidCallback(monitoringState, logCount));
             }
 
             LogDeliveryCallback callback;
             if (required.size() > 1) {
-                callback = new MultiLogDeliveryCallback(message.getOriginator(), message.getRequestId(), required.size());
+                callback = new MonitoringMultiLogDeliveryCallback(monitoringState, message.getOriginator(), message.getRequestId(), required.size(), logCount);
             } else {
-                callback = new SingleLogDeliveryCallback(message.getOriginator(), message.getRequestId());
+                callback = new MonitoringSingleLogDeliveryCallback(monitoringState, message.getOriginator(), message.getRequestId(), logCount);
             }
             try {
-                for (LogAppender logAppender : required) {
-                    logAppender.doAppend(message.getLogEventPack(), callback);
+                if (required.size() > 0) {
+                    monitoringState.appendInputTaskCount(logCount);
+                    for (LogAppender logAppender : required) {
+                        logAppender.doAppend(message.getLogEventPack(), callback);
+                    }
                 }
             } catch (Exception e) {
                 LOG.warn("Error during execution of appender(s)", e);
@@ -103,7 +109,7 @@ public class ApplicationLogActorMessageProcessor {
         LogAppenderFilterKey key = new LogAppenderFilterKey(schemaVersion, confirmDelivery);
         List<LogAppender> result = logAppendersCache.get(key);
         if (result == null) {
-            result = new ArrayList<LogAppender>();
+            result = new ArrayList<>();
             for (LogAppender appender : logAppenders.values()) {
                 if (appender.isSchemaVersionSupported(schemaVersion) && appender.isDeliveryConfirmationRequired() == confirmDelivery) {
                     result.add(appender);
@@ -190,24 +196,6 @@ public class ApplicationLogActorMessageProcessor {
     private void addAppender(String appenderId, LogAppender logAppender) {
         logAppendersCache.clear();
         logAppenders.put(appenderId, logAppender);
-    }
-
-    private static final class VoidCallback implements LogDeliveryCallback {
-        @Override
-        public void onSuccess() {
-        }
-
-        @Override
-        public void onRemoteError() {
-        }
-
-        @Override
-        public void onInternalError() {
-        }
-
-        @Override
-        public void onConnectionError() {
-        }
     }
 
     private static final class LogAppenderFilterKey {

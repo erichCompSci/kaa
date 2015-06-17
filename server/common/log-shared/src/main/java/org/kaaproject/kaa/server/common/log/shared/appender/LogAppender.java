@@ -16,7 +16,6 @@
 package org.kaaproject.kaa.server.common.log.shared.appender;
 
 import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
-import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 
 public interface LogAppender {
 
@@ -49,13 +48,6 @@ public interface LogAppender {
      * @return the id
      */
     String getAppenderId();
-
-    /**
-     * Set monitoring service for log appender.
-     *
-     * @param monitoringService
-     */
-    void setMonitoringService(MonitoringService monitoringService);
 
     /**
      * Sets the application token.

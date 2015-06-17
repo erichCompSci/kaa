@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.kaaproject.kaa.server.common.monitoring;
+package org.kaaproject.kaa.server.common.monitoring.gc;
 
-public interface MonitoringService {
+public interface GCAlarmCallback {
 
-    void addNodeStateListener(String name, NodeStateChangeCallback callback);
+    void onGCAlarm(long gcDuration);
 
-    MonitoringState createMonitoringState(String name);
 }

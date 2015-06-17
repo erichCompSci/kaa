@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.util.concurrent.FutureCallback;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.kaaproject.kaa.common.avro.AvroByteArrayConverter;
@@ -32,50 +30,54 @@ import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
 import org.kaaproject.kaa.common.dto.logs.LogEventDto;
 import org.kaaproject.kaa.common.dto.logs.LogHeaderStructureDto;
 import org.kaaproject.kaa.server.common.log.shared.avro.gen.RecordHeader;
-import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
-import org.kaaproject.kaa.server.common.monitoring.NodeState;
-import org.kaaproject.kaa.server.common.monitoring.NodeStateChangeCallback;
-import org.kaaproject.kaa.server.common.monitoring.MonitoringInfo;
-import org.kaaproject.kaa.server.common.monitoring.callback.CallbackHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The Class LogAppender.
  */
-public abstract class AbstractLogAppender<T extends SpecificRecordBase> implements LogAppender, NodeStateChangeCallback {
+public abstract class AbstractLogAppender<T extends SpecificRecordBase> implements LogAppender {
 
-    /** The Constant LOG. */
+    /**
+     * The Constant LOG.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(AbstractLogAppender.class);
 
-    /** The Constant LOG_HEADER_VERSION. */
+    /**
+     * The Constant LOG_HEADER_VERSION.
+     */
     private static final int LOG_HEADER_VERSION = 1;
 
-    /** The appender id. */
+    /**
+     * The appender id.
+     */
     private String appenderId;
 
-    /** The name. */
+    /**
+     * The name.
+     */
     private String name;
 
-    /** The application token. */
+    /**
+     * The application token.
+     */
     private String applicationToken;
 
-    /** The header. */
+    /**
+     * The header.
+     */
     private List<LogHeaderStructureDto> header;
 
     private int minSchemaVersion, maxSchemaVersion;
 
     private boolean confirmDelivery;
 
-    /** The converters. */
+    /**
+     * The converters.
+     */
     Map<String, GenericAvroConverter<GenericRecord>> converters = new HashMap<>();
 
     private final Class<T> configurationClass;
-
-    private MonitoringService monitoringService;
-
-    protected MonitoringInfo tasksInfo;
-    protected AtomicBoolean isOverloaded = new AtomicBoolean(false);
 
     public AbstractLogAppender(Class<T> configurationClass) {
         this.configurationClass = configurationClass;
@@ -83,19 +85,16 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
 
     /**
      * Log in <code>LogAppender</code> specific way.
-     * 
-     * @param logEventPack
-     *            the pack of Log Events
-     * @param header
-     *            the header
+     *
+     * @param logEventPack the pack of Log Events
+     * @param header       the header
      */
     public abstract void doAppend(LogEventPack logEventPack, RecordHeader header, LogDeliveryCallback listener);
 
     /**
      * Change parameters of log appender.
-     * 
-     * @param appender
-     *            the appender
+     *
+     * @param appender the appender
      */
 
     protected abstract void initFromConfiguration(LogAppenderDto appender, T configuration);
@@ -134,14 +133,9 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
         this.appenderId = appenderId;
     }
 
-    @Override
-    public void setMonitoringService(MonitoringService monitoringService) {
-        this.monitoringService = monitoringService;
-    }
-
     /**
      * Gets the application token.
-     * 
+     *
      * @return the applicationToken
      */
     public String getApplicationToken() {
@@ -155,7 +149,7 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
 
     /**
      * Gets the header.
-     * 
+     *
      * @return the header
      */
     public List<LogHeaderStructureDto> getHeader() {
@@ -164,33 +158,17 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
 
     /**
      * Sets the header.
-     * 
-     * @param header
-     *            the new header
+     *
+     * @param header the new header
      */
     public void setHeader(List<LogHeaderStructureDto> header) {
         this.header = header;
     }
 
-    @Override
-    public void onStateChange(NodeState state) {
-        switch (state) {
-            case OVERLOADED:
-                isOverloaded.set(true);
-                break;
-            case NORMAL:
-                isOverloaded.set(false);
-                break;
-            default:
-                LOG.warn("Log appender does not support new load state.");
-                break;
-        }
-    }
 
     @Override
     public void init(LogAppenderDto appender) {
         this.header = appender.getHeaderStructure();
-        tasksInfo = monitoringService.registerStatistics(appender.getName(), this);
         initLogAppender(appender);
     }
 
@@ -215,11 +193,9 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
 
     /**
      * Generate log event.
-     * 
-     * @param logEventPack
-     *            the log event pack
-     * @param header
-     *            the header
+     *
+     * @param logEventPack the log event pack
+     * @param header the header
      * @return the list
      */
     protected List<LogEventDto> generateLogEvent(LogEventPack logEventPack, RecordHeader header) throws IOException {
@@ -247,14 +223,10 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
         return events;
     }
 
-    protected FutureCallback getCallbackHolder(LogDeliveryCallback listener, int logCount) {
-        return new CallbackHolder(listener, tasksInfo, logCount);
-    }
     /**
      * Gets the converter.
-     * 
-     * @param schema
-     *            the schema
+     *
+     * @param schema the schema
      * @return the converter
      */
     private GenericAvroConverter<GenericRecord> getConverter(String schema) {
@@ -271,9 +243,8 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
 
     /**
      * Generate header.
-     * 
-     * @param logEventPack
-     *            the log event pack
+     *
+     * @param logEventPack the log event pack
      * @return the log header
      */
     private RecordHeader generateHeader(LogEventPack logEventPack) {
@@ -282,25 +253,24 @@ public abstract class AbstractLogAppender<T extends SpecificRecordBase> implemen
             logHeader = new RecordHeader();
             for (LogHeaderStructureDto field : header) {
                 switch (field) {
-                case KEYHASH:
-                    logHeader.setEndpointKeyHash(logEventPack.getEndpointKey());
-                    break;
-                case TIMESTAMP:
-                    logHeader.setTimestamp(System.currentTimeMillis());
-                    break;
-                case TOKEN:
-                    logHeader.setApplicationToken(applicationToken);
-                    break;
-                case VERSION:
-                    logHeader.setHeaderVersion(LOG_HEADER_VERSION);
-                    break;
-                default:
-                    LOG.warn("Current header field [{}] doesn't support", field);
-                    break;
+                    case KEYHASH:
+                        logHeader.setEndpointKeyHash(logEventPack.getEndpointKey());
+                        break;
+                    case TIMESTAMP:
+                        logHeader.setTimestamp(System.currentTimeMillis());
+                        break;
+                    case TOKEN:
+                        logHeader.setApplicationToken(applicationToken);
+                        break;
+                    case VERSION:
+                        logHeader.setHeaderVersion(LOG_HEADER_VERSION);
+                        break;
+                    default:
+                        LOG.warn("Current header field [{}] doesn't support", field);
+                        break;
                 }
             }
         }
         return logHeader;
     }
-
 }

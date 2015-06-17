@@ -32,8 +32,11 @@ import org.kaaproject.kaa.server.common.log.shared.appender.LogAppender;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogDeliveryCallback;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogEventPack;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogSchema;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringState;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Operation;
+import org.kaaproject.kaa.server.operations.service.akka.AkkaContext;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.LogEventPackMessage;
 import org.kaaproject.kaa.server.operations.service.logs.LogAppenderService;
 import org.mockito.Mockito;
@@ -50,8 +53,10 @@ public class ApplicationLogActorTest {
     private ApplicationLogActorMessageProcessor applicationLogActorMessageProcessor;
 
     private LogAppenderService logAppenderService;
+    private AkkaContext akkaContext;
     private ApplicationService applicationService;
     private ApplicationDto applicationDto;
+    private MonitoringService monitoringService;
 
     private List<LogAppender> logAppenders;
 
@@ -69,6 +74,8 @@ public class ApplicationLogActorTest {
         logAppenderService = mock(LogAppenderService.class);
         applicationService = mock(ApplicationService.class);
         applicationDto = mock(ApplicationDto.class);
+        akkaContext = mock(AkkaContext.class);
+        monitoringService = mock(MonitoringService.class);
 
         LogSchemaDto logSchemaDto = new LogSchemaDto();
         logSchemaDto.setMajorVersion(TEST_SCHEMA_VERSION);
@@ -83,11 +90,15 @@ public class ApplicationLogActorTest {
         when(applicationDto.getId()).thenReturn(APPLICATION_ID);
         when(logAppenderService.getApplicationAppenders(APPLICATION_ID)).thenReturn(logAppenders);
         when(logAppender.isSchemaVersionSupported(Mockito.anyInt())).thenReturn(Boolean.TRUE);
+        when(akkaContext.getLogAppenderService()).thenReturn(logAppenderService);
+        when(akkaContext.getApplicationService()).thenReturn(applicationService);
+        when(akkaContext.getMonitoringService()).thenReturn(monitoringService);
+        when(monitoringService.createMonitoringState(Mockito.anyString())).thenReturn(new MonitoringState());
     }
 
     @Test
     public void proccessLogSchemaVersionMessageHaveLogSchemaTest() throws Exception {
-        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(logAppenderService, applicationService, APP_TOKEN);
+        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(akkaContext, APP_TOKEN);
 
         LogEventPackMessage logEventPackMessage = mock(LogEventPackMessage.class);
         when(logEventPackMessage.getLogSchema()).thenReturn(logSchema);
@@ -100,7 +111,7 @@ public class ApplicationLogActorTest {
 
     @Test
     public void proccessLogSchemaVersionNotSupported() throws Exception {
-        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(logAppenderService, applicationService, APP_TOKEN);
+        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(akkaContext, APP_TOKEN);
 
         LogEventPackMessage logEventPackMessage = mock(LogEventPackMessage.class);
         when(logAppender.isSchemaVersionSupported(1)).thenReturn(Boolean.FALSE);
@@ -116,7 +127,7 @@ public class ApplicationLogActorTest {
 
     @Test
     public void proccessLogSchemaVersionLogShemasNoSchemaTest() throws Exception {
-        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(logAppenderService, applicationService, APP_TOKEN);
+        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(akkaContext, APP_TOKEN);
 
         LogEventPackMessage logEventPackMessage = mock(LogEventPackMessage.class);
         when(logEventPackMessage.getLogSchemaVersion()).thenReturn(LOG_SCHEMA_VERSION);
@@ -141,7 +152,7 @@ public class ApplicationLogActorTest {
         notification.setOp(Operation.ADD_LOG_APPENDER);
 
         logAppenders.clear();
-        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(logAppenderService, applicationService, APP_TOKEN);
+        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(akkaContext, APP_TOKEN);
 
         when(logAppenderService.getApplicationAppender(APPENDER_ID)).thenReturn(mockAppender);
         applicationLogActorMessageProcessor.processLogAppenderNotification(notification);
@@ -171,7 +182,7 @@ public class ApplicationLogActorTest {
         // old appender does not support current log schema
         when(logAppender.isSchemaVersionSupported(Mockito.anyInt())).thenReturn(Boolean.FALSE);
 
-        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(logAppenderService, applicationService, APP_TOKEN);
+        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(akkaContext, APP_TOKEN);
 
         applicationLogActorMessageProcessor.processLogEventPack(Mockito.mock(ActorContext.class), logEventPackMessage);
         // check that log pack is not processed
@@ -202,7 +213,7 @@ public class ApplicationLogActorTest {
         // new appender supports current log schema
         when(logAppender.isSchemaVersionSupported(Mockito.anyInt())).thenReturn(Boolean.TRUE);
 
-        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(logAppenderService, applicationService, APP_TOKEN);
+        applicationLogActorMessageProcessor = new ApplicationLogActorMessageProcessor(akkaContext, APP_TOKEN);
 
         applicationLogActorMessageProcessor.processLogEventPack(Mockito.mock(ActorContext.class), logEventPackMessage);
         // check that log pack is not processed

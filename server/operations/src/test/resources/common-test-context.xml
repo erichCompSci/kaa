@@ -33,6 +33,7 @@
     <context:component-scan base-package="org.kaaproject.kaa.server.operations" />
 
     <import resource="classpath:mongo-dao-test-context.xml" />
+    <import resource="classpath:monitoring-context.xml" />
 
     <util:properties id="properties"
         location="classpath:/operations-server-test.properties" />

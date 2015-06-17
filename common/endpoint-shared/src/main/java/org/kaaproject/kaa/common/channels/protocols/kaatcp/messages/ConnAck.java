@@ -44,7 +44,8 @@ public class ConnAck extends MqttFrame {
         REFUSE_SERVER_UNAVAILABLE((byte)0x04),
         REFUSE_BAD_CREDENTIALS((byte)0x05),
         REFUSE_NO_AUTH((byte)0x06),
-        UNDEFINED((byte)0x07);
+        UNDEFINED((byte)0x07),
+        REFUSE_SERVER_OVERLOADED((byte)0x08);
 
         private byte returnCode;
 

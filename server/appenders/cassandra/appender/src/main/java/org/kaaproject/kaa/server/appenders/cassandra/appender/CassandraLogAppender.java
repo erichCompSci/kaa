@@ -17,6 +17,7 @@
 package org.kaaproject.kaa.server.appenders.cassandra.appender;
 
 import com.datastax.driver.core.ResultSet;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.avro.generic.GenericRecord;
@@ -71,53 +72,55 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
     @Override
     public void doAppend(final LogEventPack logEventPack, final RecordHeader header, final LogDeliveryCallback listener) {
         if (!closed) {
-            if (!isOverloaded.get()) {
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            LOG.debug("[{}] appending {} logs to cassandra collection", tableName, logEventPack.getEvents().size());
-                            GenericAvroConverter<GenericRecord> eventConverter = getConverter(logEventPack.getLogSchema().getSchema());
-                            GenericAvroConverter<GenericRecord> headerConverter = getConverter(header.getSchema().toString());
-                            List<CassandraLogEventDto> dtoList = generateCassandraLogEvent(logEventPack, header, eventConverter);
-                            LOG.debug("[{}] saving {} objects", tableName, dtoList.size());
-                            if (!dtoList.isEmpty()) {
-                                int logCount = dtoList.size();
-                                switch (executeRequestType) {
-                                    case ASYNC:
-                                        ListenableFuture<ResultSet> result = logEventDao.saveAsync(dtoList, tableName, eventConverter, headerConverter);
-                                        Futures.addCallback(result, getCallbackHolder(listener, logCount), callbackExecutor);
-                                        break;
-                                    case SYNC:
-                                        try {
-                                            tasksInfo.appendInputTaskCount(logCount);
-                                            logEventDao.save(dtoList, tableName, eventConverter, headerConverter);
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        LOG.debug("[{}] appending {} logs to cassandra column family", tableName, logEventPack.getEvents().size());
+                        GenericAvroConverter<GenericRecord> eventConverter = getConverter(logEventPack.getLogSchema().getSchema());
+                        GenericAvroConverter<GenericRecord> headerConverter = getConverter(header.getSchema().toString());
+                        List<CassandraLogEventDto> dtoList = generateCassandraLogEvent(logEventPack, header, eventConverter);
+                        LOG.debug("[{}] saving {} objects", tableName, dtoList.size());
+                        if (!dtoList.isEmpty()) {
+                            switch (executeRequestType) {
+                                case ASYNC:
+                                    ListenableFuture<ResultSet> result = logEventDao.saveAsync(dtoList, tableName, eventConverter, headerConverter);
+                                    Futures.addCallback(result, new FutureCallback<ResultSet>() {
+                                        @Override
+                                        public void onSuccess(ResultSet result) {
                                             listener.onSuccess();
-                                            tasksInfo.appendSuccessTaskCount(logCount);
-                                        } catch (IOException e) {
-                                            listener.onInternalError();
-                                            tasksInfo.appendFailureTaskCount(logCount);
                                         }
-                                        break;
-                                }
-                                LOG.debug("[{}] appended {} logs to cassandra collection", tableName, logEventPack.getEvents().size());
-                            } else {
-                                LOG.warn("Received log event list is empty");
-                                listener.onInternalError();
+
+                                        @Override
+                                        public void onFailure(Throwable t) {
+                                            LOG.warn("[{}] Received remote error for cassandra log appender", tableName, t);
+                                            listener.onRemoteError();
+                                        }
+                                    }, callbackExecutor);
+                                    break;
+                                case SYNC:
+                                    try {
+                                        logEventDao.save(dtoList, tableName, eventConverter, headerConverter);
+                                        listener.onSuccess();
+                                    } catch (IOException e) {
+                                        listener.onInternalError();
+                                    }
+                                    break;
                             }
-                        } catch (Exception e) {
-                            LOG.warn("Got exception. Can't process log events", e);
+                            LOG.debug("[{}] appended {} logs to cassandra column family", tableName, logEventPack.getEvents().size());
+                        } else {
+                            LOG.warn("Received log event list is empty");
                             listener.onInternalError();
                         }
+                    } catch (Exception e) {
+                        LOG.warn("Got exception. Can't process log events", e);
+                        listener.onInternalError();
                     }
-                });
-            } else {
-                LOG.info("Attempted to append to overloaded appender named [{}].", getName());
-                listener.onInternalError();
-            }
+                }
+            });
         } else {
-            LOG.info("Attempted to append to closed appender named [{}].", getName());
-            listener.onConnectionError();
+            LOG.info("Attempted to append to overloaded appender named [{}].", getName());
+            listener.onInternalError();
         }
     }
 
@@ -221,7 +224,7 @@ public class CassandraLogAppender extends AbstractLogAppender<CassandraConfig> {
         GenericAvroConverter<GenericRecord> genAvroConverter = converterMap.get(schema);
         if (genAvroConverter == null) {
             LOG.trace("Create new converter for schema [{}]", schema);
-            genAvroConverter = new GenericAvroConverter<GenericRecord>(schema);
+            genAvroConverter = new GenericAvroConverter<>(schema);
             converterMap.put(schema, genAvroConverter);
             converters.set(converterMap);
         }

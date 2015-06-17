@@ -42,6 +42,7 @@
         <module>dao</module>
         <module>nosql</module>
         <module>dto</module>
+        <module>monitoring</module>
         <module>utils</module>
         <module>netty-server</module>
         <module>log-shared</module>

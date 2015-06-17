@@ -22,7 +22,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import org.kaaproject.kaa.common.dto.ApplicationDto;
-import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 import org.kaaproject.kaa.server.common.monitoring.NodeState;
 import org.kaaproject.kaa.server.common.monitoring.NodeStateChangeCallback;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
@@ -83,9 +82,6 @@ public class DefaultAkkaService implements AkkaService, NodeStateChangeCallback 
     @Autowired
     private AkkaContext context;
 
-    @Autowired
-    private MonitoringService monitoringService;
-
     private AkkaEventServiceListener listener;
 
     private StatusListenerThread statusListenerThread;
@@ -111,7 +107,7 @@ public class DefaultAkkaService implements AkkaService, NodeStateChangeCallback 
         context.getEventService().addListener(listener);
         LOG.info("Initializing Akka system done");
         LOG.info("Registering Akka system for monitoring...");
-        monitoringService.registerStatistics("Akka system", this);
+        context.getMonitoringService().addNodeStateListener("Akka system", this);
         LOG.info("Registering Akka system for monitoring done.");
     }
 

@@ -16,6 +16,7 @@
 package org.kaaproject.kaa.server.operations.service.akka;
 
 import org.kaaproject.kaa.server.common.dao.ApplicationService;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 import org.kaaproject.kaa.server.operations.service.OperationsService;
 import org.kaaproject.kaa.server.operations.service.cache.CacheService;
 import org.kaaproject.kaa.server.operations.service.event.EventService;
@@ -64,6 +65,9 @@ public class AkkaContext {
 
     @Autowired
     private MetricsService metricsService;
+
+    @Autowired
+    private MonitoringService monitoringService;
 
     @Autowired
     private LogAppenderService logAppenderService;
@@ -130,5 +134,9 @@ public class AkkaContext {
 
     public Boolean getSupportUnencryptedConnection() {
         return supportUnencryptedConnection;
+    }
+
+    public MonitoringService getMonitoringService() {
+        return monitoringService;
     }
 }

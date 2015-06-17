@@ -41,7 +41,8 @@ public class Disconnect extends MqttFrame {
     public enum DisconnectReason {
         NONE((byte)0x00),
         BAD_REQUEST((byte)0x01),
-        INTERNAL_ERROR((byte)0x02);
+        INTERNAL_ERROR((byte)0x02),
+        OVERLOAD((byte)0x03);
 
         private byte reason;
 

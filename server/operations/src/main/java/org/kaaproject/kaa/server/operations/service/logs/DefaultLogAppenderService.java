@@ -25,6 +25,7 @@ import org.kaaproject.kaa.server.common.dao.LogAppendersService;
 import org.kaaproject.kaa.server.common.dao.LogSchemaService;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogAppender;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogSchema;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ public class DefaultLogAppenderService implements LogAppenderService {
 
     @Autowired
     private LogAppendersService logAppendersService;
+
+    @Autowired
+    private MonitoringService monitoringService;
 
     @Override
     public List<LogAppender> getApplicationAppenders(String applicationId) {
@@ -109,4 +113,8 @@ public class DefaultLogAppenderService implements LogAppenderService {
         return logSchema;
     }
 
+    @Override
+    public MonitoringService getMonitoringService() {
+        return monitoringService;
+    }
 }

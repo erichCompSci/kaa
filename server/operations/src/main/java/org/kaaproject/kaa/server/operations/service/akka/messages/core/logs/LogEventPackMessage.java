@@ -33,14 +33,15 @@ public class LogEventPackMessage {
 
     private final ActorRef originator;
 
-    /** Log Event Pack. */
+    /**
+     * Log Event Pack.
+     */
     private final LogEventPack logEventPack;
 
     /**
      * Instantiates a new log event pack message.
-     * 
-     * @param logEventPack
-     *            the log event pack
+     *
+     * @param logEventPack the log event pack
      */
     public LogEventPackMessage(int requestId, ActorRef originator, LogEventPack logEventPack) {
         this.requestId = requestId;
@@ -82,5 +83,16 @@ public class LogEventPackMessage {
 
     public void setLogSchema(LogSchema logSchema) {
         logEventPack.setLogSchema(logSchema);
+    }
+
+    public int getLogCount() {
+        int count = 0;
+        if (logEventPack != null) {
+            List<LogEvent> logs = logEventPack.getEvents();
+            if (logs != null) {
+                count = logs.size();
+            }
+        }
+        return count;
     }
 }

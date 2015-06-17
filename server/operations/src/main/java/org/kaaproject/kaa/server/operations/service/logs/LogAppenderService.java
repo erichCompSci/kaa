@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.kaaproject.kaa.server.common.log.shared.appender.LogAppender;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogSchema;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
 
 /**
  * Service that return appenders list.
@@ -61,4 +62,10 @@ public interface LogAppenderService {
      */
     LogAppender getApplicationAppender(String appenderId);
 
+    /**
+     * Gets monitoring service object
+     *
+     * @return the <code>MonitoringService<code/> object
+     */
+    MonitoringService getMonitoringService();
 }
