@@ -35,7 +35,7 @@ RUN apt-get install -y lib32z1 lib32stdc++6 libc6-i386 curl && apt-get -y autore
 
 RUN cd /usr/local/ && curl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && tar xf android-sdk_r24.0.2-linux.tgz && rm -f android-sdk_r24.0.2-linux.tgz
 
-RUN while :;  do  echo y; sleep 2;  done | /usr/local/android-sdk-linux/tools/android update sdk --filter 'android-21,build-tools-21.1.2,tool,platform-tool' --no-ui --force -a
+RUN while :;  do  echo y; sleep 2;  done | /usr/local/android-sdk-linux/tools/android update sdk --filter 'android-15,android-16,android-17,android-18,android-19,android-20,android-21,build-tools-21.1.2,tool,platform-tool' --no-ui --force -a
 
 RUN sed -i '484i<property name="aidl" location="${android.build.tools.dir}/aidl${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml
 RUN sed -i '485i<property name="aapt" location="${android.build.tools.dir}/aapt${exe}" />' /usr/local/android-sdk-linux/tools/ant/build.xml
@@ -58,7 +58,7 @@ RUN apt-get install -y postgresql postgresql-contrib && apt-get -y autoremove
 
 # install mongodb
 ENV MONGO_DB_PATH /var/lib/mongodb
-RUN apt-get install -y mongodb-dev && \
+RUN apt-get install -y mongodb && \
   echo ${MONGO_DB_PATH} >> /etc/mongod.conf
 
 
