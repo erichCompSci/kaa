@@ -26,7 +26,7 @@ public class SandboxMetaBuilder implements SandboxConstants {
 
     private OsType osType = OsType.DEBIAN;
 
-    private String[] sandboxServices = {"zookeeper", "postgresql", "mongodb"};
+    private String[] sandboxServices = {"zookeeper", "postgresql", "mongod"};
 
 
     SandboxMetaBuilder(int webAdminForwardPort) {

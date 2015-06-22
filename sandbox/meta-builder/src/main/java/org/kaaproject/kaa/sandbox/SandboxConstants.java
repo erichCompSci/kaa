@@ -57,7 +57,7 @@ public interface SandboxConstants {
     public static final String SANDBOX_FOLDER = "/usr/lib/kaa-sandbox";
     public static final String ADMIN_FOLDER = "/usr/lib/kaa-admin";
 
-
     public static final String META_BUILDER_JAR = "meta-builder.jar";
     public static final String LOG_DUMP_LOCATION = "sandbox/builder/target/sandbox_logs/";
+    public static final String CASSANDRA_INIT_SCRIPT = "/usr/lib/kaa-control/conf/cassandra.cql";
 }

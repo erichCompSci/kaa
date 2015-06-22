@@ -42,7 +42,7 @@ public class DockerSandboxBuilder extends VeryAbstractSandboxBuilder {
 
     @Override
     protected void buildSandboxMetaImpl() throws Exception {
-        executeSudoSandboxCommand("mv /usr/local/android-sdk-linux/ $ANDROID_HOME && cp -r /root/.android $ANDROID_HOME/  && service postgresql start && su - postgres -c " +
+        executeSudoSandboxCommand("mv /usr/local/android-sdk-linux/ \\$ANDROID_HOME && cp -r /root/.android \\$ANDROID_HOME/  && service postgresql start && su - postgres -c " +
                 "\"psql --command \\\\\"alter user postgres with password 'admin';\\\\\" && " +
                 "psql --command \\\\\"CREATE DATABASE kaa;\\\\\"\" && "+
                 "java -jar " + SANDBOX_FOLDER + "/" + META_BUILDER_JAR + " " + webAdminForwardPort + " && rm -rf /tmp/*");
