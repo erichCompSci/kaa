@@ -76,6 +76,8 @@ import org.kaaproject.kaa.server.common.log.shared.appender.LogAppender;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogDeliveryCallback;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogEventPack;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogSchema;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringService;
+import org.kaaproject.kaa.server.common.monitoring.MonitoringState;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.RedirectionRule;
 import org.kaaproject.kaa.server.operations.pojo.SyncContext;
@@ -160,6 +162,7 @@ public class DefaultAkkaServiceTest {
     private NotificationDto topicNotification;
     private LogAppenderService logAppenderService;
     private EndpointUserService endpointUserService;
+    private MonitoringService monitoringService;
 
     private KeyPair clientPair;
     private KeyPair targetPair;
@@ -185,6 +188,8 @@ public class DefaultAkkaServiceTest {
         eventService = mock(EventService.class);
         logAppenderService = mock(LogAppenderService.class);
         endpointUserService = mock(EndpointUserService.class);
+        monitoringService = mock(MonitoringService.class);
+        when(monitoringService.createMonitoringState(Mockito.anyString())).thenReturn(new MonitoringState());
 
         ReflectionTestUtils.setField(context, "cacheService", cacheService);
         ReflectionTestUtils.setField(context, "metricsService", metricsService);
@@ -195,6 +200,7 @@ public class DefaultAkkaServiceTest {
         ReflectionTestUtils.setField(context, "eventService", eventService);
         ReflectionTestUtils.setField(context, "logAppenderService", logAppenderService);
         ReflectionTestUtils.setField(context, "endpointUserService", endpointUserService);
+        ReflectionTestUtils.setField(context, "monitoringService", monitoringService);
 
         clientPair = KeyUtil.generateKeyPair();
         targetPair = KeyUtil.generateKeyPair();
