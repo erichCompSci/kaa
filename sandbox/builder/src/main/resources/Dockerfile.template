@@ -78,7 +78,7 @@ RUN keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -a
 
 # autostart services
 RUN echo "/opt/zookeeper/bin/zkServer.sh start"  >> /etc/bash.bashrc
-RUN echo "service mongodb start" >> /etc/bash.bashrc
+RUN echo "service mongod start" >> /etc/bash.bashrc
 
 ${kaa_dockerfile_part}
 
