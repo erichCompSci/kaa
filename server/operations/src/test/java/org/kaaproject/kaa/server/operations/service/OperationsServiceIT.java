@@ -149,7 +149,7 @@ public class OperationsServiceIT extends AbstractTest {
     private static final byte[] ENDPOINT_KEY = getRandEndpointKey();
     private static final byte[] ENDPOINT_KEY2 = getRandEndpointKey();
     private static final SdkPropertiesDto SDK_PROPERTIES = new SdkPropertiesDto(null, CONF_SCHEMA_VERSION,
-            PROFILE_SCHEMA_VERSION, 1, 1, SdkPlatform.JAVA, null, null, null);
+            PROFILE_SCHEMA_VERSION, 1, 1, SdkPlatform.JAVA, null, null, null, false);
     private String SDK_TOKEN;
 
     public static final String NEW_COMPLEX_CONFIG = "service/delta/complexFieldsDeltaNew.json";
