@@ -74,7 +74,7 @@ public class ProfileServiceTest {
     public void testPopulateVersionStates() {
         EndpointProfileDto dtoMock = Mockito.mock(EndpointProfileDto.class);
 
-        SdkPropertiesDto sdkProperties = new SdkPropertiesDto(null, 1, 2, 3, 4, SdkPlatform.JAVA, Collections.EMPTY_LIST, null, null);
+        SdkPropertiesDto sdkProperties = new SdkPropertiesDto(null, 1, 2, 3, 4, SdkPlatform.JAVA, Collections.EMPTY_LIST, null, null, false);
 
         ApplicationEventFamilyMapDto applicationEventFamilyMap = new ApplicationEventFamilyMapDto();
         applicationEventFamilyMap.setVersion(7);
