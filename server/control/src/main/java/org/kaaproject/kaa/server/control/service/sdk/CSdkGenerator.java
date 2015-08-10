@@ -129,6 +129,7 @@ public class CSdkGenerator extends SdkGenerator {
         Integer notificationSchemaVersion = sdkProperties.getNotificationSchemaVersion();
         Integer logSchemaVersion = sdkProperties.getLogSchemaVersion();
         String defaultVerifierToken = sdkProperties.getDefaultVerifierToken();
+        Boolean generateReducedSdk = sdkProperties.getGenerateReducedSdk();
 
         String sdkTemplateLocation = System.getProperty("server_home_dir") + "/" + C_SDK_DIR + "/" + C_SDK_PREFIX + buildVersion + ".tar.gz";
 

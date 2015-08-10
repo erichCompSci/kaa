@@ -47,6 +47,7 @@ import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -69,6 +70,8 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
 
     private Button addAefMapButton;
     private Button removeAefMapButton;
+    
+    private CheckBox genReducedSdk;
     
     private ValueListBox<UserVerifierDto> defaultUserVerifier;
 
@@ -146,6 +149,17 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
         });
         detailsTable.setWidget(row, 0, label);
         detailsTable.setWidget(row, 1, targetPlatform);
+        
+        row++;
+        label = new Label(Utils.constants.generateReducedSdk());
+        label.addStyleName(REQUIRED);
+        genReducedSdk = new CheckBox(Utils.constants.generateReducedSdk());
+        genReducedSdk.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+        	@Override
+        	public void onValueChange(ValueChangeEvent<Boolean> evt) {
+        		fireChanged();
+        	}
+        });
         
         row++;
         FlexTable ecfsTable = new FlexTable();

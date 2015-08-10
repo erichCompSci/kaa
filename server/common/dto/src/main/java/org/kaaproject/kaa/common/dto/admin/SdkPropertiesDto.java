@@ -37,6 +37,7 @@ public class SdkPropertiesDto implements HasId, Serializable {
     private List<String> aefMapIds;
     private String defaultVerifierToken;
     private String applicationToken;
+    private Boolean generateReducedSdk;
 
     public SdkPropertiesDto() {
     }
@@ -45,7 +46,8 @@ public class SdkPropertiesDto implements HasId, Serializable {
                             Integer profileSchemaVersion, Integer notificationSchemaVersion,
                             Integer logSchemaVersion,
                             SdkPlatform targetPlatform, List<String> aefMapIds,
-                            String defaultVerifierToken, String applicationToken) {
+                            String defaultVerifierToken, String applicationToken,
+                            Boolean generateReducedSdk) {
         super();
         this.applicationId = applicationId;
         this.configurationSchemaVersion = configurationSchemaVersion;
@@ -56,6 +58,7 @@ public class SdkPropertiesDto implements HasId, Serializable {
         this.aefMapIds = aefMapIds;
         this.defaultVerifierToken = defaultVerifierToken;
         this.applicationToken = applicationToken;
+        this.generateReducedSdk = generateReducedSdk;
     }
 
     public String getApplicationId() {
@@ -130,6 +133,13 @@ public class SdkPropertiesDto implements HasId, Serializable {
         this.applicationToken = applicationToken;
     }
 
+    public Boolean getGenerateReducedSdk() {
+    	return generateReducedSdk;
+    }
+    
+    public void setGenerateReducedSdk(Boolean generateReducedSdk) {
+    	this.generateReducedSdk = generateReducedSdk;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -196,6 +206,7 @@ public class SdkPropertiesDto implements HasId, Serializable {
                 ", aefMapIds=" + aefMapIds +
                 ", defaultVerifierToken='" + defaultVerifierToken + '\'' +
                 ", applicationToken='" + applicationToken + '\'' +
+                ", generateReducedSdk='" + generateReducedSdk + '\'' +
                 '}';
     }
 
