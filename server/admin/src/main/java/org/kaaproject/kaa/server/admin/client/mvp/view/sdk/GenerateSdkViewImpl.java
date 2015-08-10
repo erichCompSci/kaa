@@ -140,11 +140,19 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
                 appendable.append(render(object));
             }
         };
+        
+        /* Need this here to use in targetPlatform ValueCangeHandler */
+        genReducedSdk = new CheckBox(Utils.constants.generateReducedSdk());
+        
         targetPlatform = new ValueListBox<>(targetPlatformRenderer);
         targetPlatform.addValueChangeHandler(new ValueChangeHandler<SdkPlatform>() {
             @Override
             public void onValueChange(ValueChangeEvent<SdkPlatform> event) {
                 fireChanged();
+                if(event.getValue()==SdkPlatform.C)
+                	genReducedSdk.setEnabled(true);
+                else
+                	genReducedSdk.setEnabled(false);
             }
         });
         detailsTable.setWidget(row, 0, label);
@@ -153,13 +161,16 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
         row++;
         label = new Label(Utils.constants.generateReducedSdk());
         label.addStyleName(REQUIRED);
-        genReducedSdk = new CheckBox(Utils.constants.generateReducedSdk());
+        genReducedSdk.setEnabled(false);
         genReducedSdk.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
         	@Override
         	public void onValueChange(ValueChangeEvent<Boolean> evt) {
         		fireChanged();
         	}
         });
+        
+        detailsTable.setWidget(row, 0, label);
+        detailsTable.setWidget(row, 1, genReducedSdk);
         
         row++;
         FlexTable ecfsTable = new FlexTable();
