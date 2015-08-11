@@ -161,7 +161,6 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
         row++;
         label = new Label(Utils.constants.generateReducedSdk());
         label.addStyleName(REQUIRED);
-        genReducedSdk.setEnabled(false);
         genReducedSdk.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
         	@Override
         	public void onValueChange(ValueChangeEvent<Boolean> evt) {
