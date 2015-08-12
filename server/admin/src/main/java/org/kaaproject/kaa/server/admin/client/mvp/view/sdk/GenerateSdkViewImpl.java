@@ -142,7 +142,7 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
         };
         
         /* Need this here to use in targetPlatform ValueCangeHandler */
-        genReducedSdk = new CheckBox(Utils.constants.generateReducedSdk());
+        genReducedSdk = new CheckBox();
         
         targetPlatform = new ValueListBox<>(targetPlatformRenderer);
         targetPlatform.addValueChangeHandler(new ValueChangeHandler<SdkPlatform>() {
@@ -161,6 +161,7 @@ public class GenerateSdkViewImpl extends BaseDetailsViewImpl implements Generate
         row++;
         label = new Label(Utils.constants.generateReducedSdk());
         label.addStyleName(REQUIRED);
+        genReducedSdk.setEnabled(false);
         genReducedSdk.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
         	@Override
         	public void onValueChange(ValueChangeEvent<Boolean> evt) {
