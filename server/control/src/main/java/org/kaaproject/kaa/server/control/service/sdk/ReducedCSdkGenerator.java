@@ -41,21 +41,5 @@ public class ReducedCSdkGenerator extends CSdkGenerator {
 				          GENERIC_SCHEMA, GENERIC_SCHEMA, GENERIC_SCHEMA,
 				          GENERIC_SCHEMA, defaultConfigurationData, eventFamilies, GENERIC_SCHEMA);
 	}
-	
-	protected String getTemplateDir() {
-    	return "sdk/reduced-c";
-    }
-    
-    protected String getSdkPrefix() {
-    	return "kaa-client-sdk-";
-    }
-    
-    protected String getSdkNamePattern() {
-    	return getSdkPrefix() + "p{}-c{}-n{}-l{}.tar.gz";
-    }
-    
-    protected String getSdkDir() {
-    	return "sdk/c";
-    }
     
 }
