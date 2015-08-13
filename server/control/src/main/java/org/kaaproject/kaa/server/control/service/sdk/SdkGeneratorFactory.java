@@ -30,7 +30,7 @@ public class SdkGeneratorFactory {
      * @param sdkPlatform the sdk platform
      * @return the sdk generator
      */
-    public static SdkGenerator createSdkGenerator(SdkPlatform sdkPlatform) {
+    public static SdkGenerator createSdkGenerator(SdkPlatform sdkPlatform, boolean genReducedSdk) {
         switch (sdkPlatform) {
         case JAVA:
         case ANDROID:
@@ -38,7 +38,10 @@ public class SdkGeneratorFactory {
         case CPP:
             return new CppSdkGenerator();
         case C:
-            return new CSdkGenerator();
+        	if(genReducedSdk)
+        		return new ReducedCSdkGenerator();
+        	else
+        		return new CSdkGenerator();
         default:
             return null;
         }
