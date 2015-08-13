@@ -45,11 +45,11 @@ public class SdkGeneratorTest {
     @Test
     public void testCreateSdkGenerator() throws Exception {
         SdkGeneratorFactory factory = new SdkGeneratorFactory();
-        SdkGenerator generator = factory.createSdkGenerator(SdkPlatform.JAVA);
+        SdkGenerator generator = factory.createSdkGenerator(SdkPlatform.JAVA, false);
         Assert.assertNotNull(generator);
-        generator = factory.createSdkGenerator(SdkPlatform.CPP);
+        generator = factory.createSdkGenerator(SdkPlatform.CPP, false);
         Assert.assertNotNull(generator);
-        generator = factory.createSdkGenerator(SdkPlatform.C);
+        generator = factory.createSdkGenerator(SdkPlatform.C, false);
         Assert.assertNotNull(generator);
 //
 //        String profileSchema = "{\"type\":\"record\",\"name\":\"SuperProfile\",\"namespace\":\"org.kaaproject.kaa.common.endpoint.gen.test\",\"fields\":[{\"name\":\"profileBody\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}";
