@@ -210,7 +210,7 @@ service ControlThriftService extends cli.CliThriftService{
 *   Client SDK
 */
 
-  Sdk generateSdk(1: data sdkProperties, 2: boolean genReducedSdk) throws(1: ControlThriftException ControlException)
+  Sdk generateSdk(1: data sdkProperties, 2: bool genReducedSdk) throws(1: ControlThriftException ControlException)
 
 /**
 *   Events
