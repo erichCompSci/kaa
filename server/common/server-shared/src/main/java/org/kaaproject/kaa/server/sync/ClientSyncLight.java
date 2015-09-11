@@ -20,6 +20,8 @@ import java.util.List;
 public class ClientSyncLight {
 
     private int requestId;
+    
+    private String endpointID;
 
     // The client sync meta data.
     private String sdkToken;
@@ -259,6 +261,14 @@ public class ClientSyncLight {
 
     public void setLogReqId(int logReqId) {
         this.logReqId = logReqId;
+    }
+
+    public String getEndpointID() {
+        return endpointID;
+    }
+
+    public void setEndpointID(String endpointID) {
+        this.endpointID = endpointID;
     }
 
     public static class JsonEvent {

@@ -59,5 +59,10 @@ public interface Constants { //NOSONAR
      * The size of user verifier token
      */
     public static final int USER_VERIFIER_TOKEN_SIZE = 20;
+    
+    /**
+     * The identifier for the Binary platform protocol
+     */
+    public static final int KAA_PLATFORM_PROTOCOL_JSON_ID = 0x3553c65d;
 
 }

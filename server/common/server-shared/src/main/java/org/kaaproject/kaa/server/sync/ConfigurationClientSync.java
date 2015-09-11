@@ -16,6 +16,7 @@
 package org.kaaproject.kaa.server.sync;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public final class ConfigurationClientSync {
     private int appStateSeqNumber;
@@ -69,17 +70,19 @@ public final class ConfigurationClientSync {
     }
 
     /**
-     * Indicates if client is interested only in resync delta encoded using base schema.
+     * Indicates if client is interested only in resync delta encoded using base
+     * schema.
      * 
-     * @return value
-     *             the value of the flag
+     * @return value the value of the flag
      */
     public boolean isResyncOnly() {
         return resyncOnly;
     }
 
     /**
-     * Sets that client is interested only in resync delta encoded using base schema
+     * Sets that client is interested only in resync delta encoded using base
+     * schema
+     * 
      * @param resyncOnly
      */
     public void setResyncOnly(boolean resyncOnly) {
@@ -130,7 +133,11 @@ public final class ConfigurationClientSync {
         builder.append("ConfigurationClientSync [appStateSeqNumber=");
         builder.append(appStateSeqNumber);
         builder.append(", configurationHash=");
-        builder.append(configurationHash);
+        if (configurationHash != null) {
+            builder.append(Arrays.toString(configurationHash.array()));
+        } else {
+            builder.append(configurationHash);
+        }
         builder.append(", resyncOnly=");
         builder.append(resyncOnly);
         builder.append("]");

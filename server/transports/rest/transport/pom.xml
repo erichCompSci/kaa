@@ -19,14 +19,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.kaaproject.kaa.server.transports</groupId>
+        <artifactId>rest</artifactId>
         <version>0.7.2-SNAPSHOT</version>
-        <artifactId>tcp</artifactId>
     </parent>
-    <groupId>org.kaaproject.kaa.server.transports.tcp</groupId>
     <artifactId>transport</artifactId>
-    <packaging>jar</packaging>
 
-    <name>Kaa TCP Transports Implementation</name>
+    <name>Kaa REST Transports Implementation</name>
     <url>http://kaaproject.org</url>
 
     <properties>
@@ -48,11 +46,6 @@
             <artifactId>netty-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.kaaproject.kaa.server.transports.tcp</groupId>
-            <artifactId>config</artifactId>
-            <classifier>tcp</classifier>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -62,6 +55,23 @@
             <artifactId>mockito-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.kaaproject.kaa.server.transports.rest</groupId>
+            <artifactId>transport-config</artifactId>
+            <classifier>rest</classifier>
+            <version>0.7.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-grizzly2-http</artifactId>
+            <version>2.21</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -70,9 +80,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                    <classifier>tcp</classifier>
+                    <classifier>rest</classifier>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+    <groupId>org.kaaproject.kaa.server.transports.rest</groupId>
 </project>

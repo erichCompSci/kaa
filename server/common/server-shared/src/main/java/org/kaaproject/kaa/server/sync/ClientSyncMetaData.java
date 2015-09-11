@@ -16,6 +16,7 @@
 package org.kaaproject.kaa.server.sync;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class ClientSyncMetaData {
     private String applicationToken;
@@ -30,7 +31,8 @@ public class ClientSyncMetaData {
     /**
      * All-args constructor.
      */
-    public ClientSyncMetaData(String applicationToken, String sdkToken, ByteBuffer endpointPublicKeyHash, ByteBuffer profileHash, Long timeout) {
+    public ClientSyncMetaData(String applicationToken, String sdkToken, ByteBuffer endpointPublicKeyHash,
+            ByteBuffer profileHash, Long timeout) {
         this.applicationToken = applicationToken;
         this.sdkToken = sdkToken;
         this.endpointPublicKeyHash = endpointPublicKeyHash;
@@ -116,7 +118,8 @@ public class ClientSyncMetaData {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o)
+            return true;
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
@@ -129,7 +132,8 @@ public class ClientSyncMetaData {
         if (applicationToken != null ? !applicationToken.equals(that.applicationToken) : that.applicationToken != null) {
             return false;
         }
-        if (endpointPublicKeyHash != null ? !endpointPublicKeyHash.equals(that.endpointPublicKeyHash) : that.endpointPublicKeyHash != null) {
+        if (endpointPublicKeyHash != null ? !endpointPublicKeyHash.equals(that.endpointPublicKeyHash)
+                : that.endpointPublicKeyHash != null) {
             return false;
         }
         if (profileHash != null ? !profileHash.equals(that.profileHash) : that.profileHash != null) {
@@ -160,9 +164,17 @@ public class ClientSyncMetaData {
         builder.append(", sdkToken=");
         builder.append(sdkToken);
         builder.append(", endpointPublicKeyHash=");
-        builder.append(endpointPublicKeyHash);
+        if (endpointPublicKeyHash != null) {
+            builder.append(Arrays.toString(endpointPublicKeyHash.array()));
+        } else {
+            builder.append(endpointPublicKeyHash);
+        }
         builder.append(", profileHash=");
-        builder.append(profileHash);
+        if (profileHash != null) {
+            builder.append(Arrays.toString(profileHash.array()));
+        } else {
+            builder.append(profileHash);
+        }
         builder.append(", timeout=");
         builder.append(timeout);
         builder.append("]");
