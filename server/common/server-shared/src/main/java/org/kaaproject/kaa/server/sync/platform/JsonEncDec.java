@@ -155,11 +155,7 @@ public class JsonEncDec implements PlatformEncDec {
             sync.setEventSync(eventSync);
         }
         if (source.getLogsSync() != null) {
-            List<LogEntry> logEntries = new ArrayList<LogEntry>();
-            for (byte[] entry : source.getLogsSync()) {
-                logEntries.add(new LogEntry(ByteBuffer.wrap(entry)));
-            }
-            LogClientSync logSync = new LogClientSync(source.getLogReqId(), logEntries);
+            LogClientSync logSync = new LogClientSync(source.getLogsSync(), source.getLogReqId());
             sync.setLogSync(logSync);
         }
 
@@ -206,8 +202,12 @@ public class JsonEncDec implements PlatformEncDec {
             if (source.getEventSync().getEvents() != null) {
                 List<JsonEvent> events = new ArrayList<ClientSyncLight.JsonEvent>();
                 for (Event e : source.getEventSync().getEvents()) {
-                    events.add(new JsonEvent(e.getSeqNum(), e.getEventClassFQN(), e.getEventData().array(), e
-                            .getSource(), e.getTarget()));
+                    byte[] eventArray = null;
+                    if (e.getEventData() != null) {
+                        eventArray = e.getEventData().array();
+                    }
+                    events.add(new JsonEvent(e.getSeqNum(), e.getEventClassFQN(), eventArray, e.getSource(), e
+                            .getTarget()));
                 }
                 sync.setEvents(events);
             }

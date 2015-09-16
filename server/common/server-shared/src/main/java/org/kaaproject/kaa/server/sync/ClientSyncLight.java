@@ -61,7 +61,7 @@ public class ClientSyncLight {
 
     // The log sync.
     private int logReqId;
-    private List<byte[]> logsSync;
+    private List<String> logsSync;
 
     public List<EndpointAttachRequest> getUserEndpointAttachRequests() {
         return userEndpointAttachRequests;
@@ -247,11 +247,11 @@ public class ClientSyncLight {
         this.events = events;
     }
 
-    public List<byte[]> getLogsSync() {
+    public List<String> getLogsSync() {
         return logsSync;
     }
 
-    public void setLogsSync(List<byte[]> logsSync) {
+    public void setLogsSync(List<String> logsSync) {
         this.logsSync = logsSync;
     }
 

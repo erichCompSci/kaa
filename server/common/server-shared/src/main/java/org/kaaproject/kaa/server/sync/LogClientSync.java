@@ -19,17 +19,26 @@ import java.util.List;
 
 public final class LogClientSync {
     private int requestId;
+    private List<String> logPackJson;
     private List<LogEntry> logEntries;
 
     public LogClientSync() {
     }
 
     /**
-     * All-args constructor.
+     * Constructor with list of log entries as data
      */
     public LogClientSync(int requestId, List<LogEntry> logEntries) {
         this.requestId = requestId;
         this.logEntries = logEntries;
+    }
+    
+    /**
+     * Constructor with list of log entries as data
+     */
+    public LogClientSync(List<String> logPackJson, int requestId) {
+        this.requestId = requestId;
+        this.setLogPackJson(logPackJson);
     }
 
     /**
@@ -107,5 +116,13 @@ public final class LogClientSync {
         builder.append(requestId);
         builder.append("]");
         return builder.toString();
+    }
+
+    public List<String> getLogPackJson() {
+        return logPackJson;
+    }
+
+    public void setLogPackJson(List<String> logPackJson) {
+        this.logPackJson = logPackJson;
     }
 }
