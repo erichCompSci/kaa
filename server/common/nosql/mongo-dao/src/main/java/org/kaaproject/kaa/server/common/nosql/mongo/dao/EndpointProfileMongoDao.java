@@ -23,6 +23,7 @@ import org.kaaproject.kaa.server.common.dao.impl.EndpointProfileDao;
 import org.kaaproject.kaa.server.common.nosql.mongo.dao.model.MongoEndpointProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.nio.ByteBuffer;
@@ -79,11 +80,9 @@ public class EndpointProfileMongoDao extends AbstractMongoDao<MongoEndpointProfi
     }
 
     @Override
-    public MongoEndpointProfile findByAccessToken(String endpointAccessToken) {
+    public List<MongoEndpointProfile> findByAccessToken(String endpointAccessToken) {
         LOG.debug("Find endpoint profile by access token [{}] ", endpointAccessToken);
-        DBObject dbObject = query(where(EP_ACCESS_TOKEN).is(endpointAccessToken)).getQueryObject();
-        DBObject result = mongoTemplate.getDb().getCollection(getCollectionName()).findOne(dbObject);
-        return mongoTemplate.getConverter().read(getDocumentClass(), result);
+        return find(query(where(EP_ACCESS_TOKEN).is(endpointAccessToken)));
     }
 
     @Override

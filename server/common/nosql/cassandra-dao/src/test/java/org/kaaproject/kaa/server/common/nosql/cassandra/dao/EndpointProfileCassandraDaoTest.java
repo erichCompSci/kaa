@@ -72,7 +72,7 @@ public class EndpointProfileCassandraDaoTest extends AbstractCassandraTest {
     @Test
     public void testFindByAccessToken() throws Exception {
         EndpointProfileDto expected = generateEndpointProfile(null, null, null);
-        EndpointProfile found = endpointProfileDao.findByAccessToken(expected.getAccessToken());
+        List<EndpointProfile> found = endpointProfileDao.findByAccessToken(expected.getAccessToken());
         Assert.assertEquals(expected, found.toDto());
     }
 

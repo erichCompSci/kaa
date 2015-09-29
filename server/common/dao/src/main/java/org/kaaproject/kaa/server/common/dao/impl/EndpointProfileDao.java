@@ -66,7 +66,7 @@ public interface EndpointProfileDao<T extends EndpointProfile> extends Dao<T, By
      * @param endpointAccessToken the endpoint access token
      * @return the endpoint profile object
      */
-    T findByAccessToken(String endpointAccessToken);
+    List<T> findByAccessToken(String endpointAccessToken);
 
 
     /**
