@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -45,10 +46,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.CassandraDaoUtil.convertKeyHashToString;
 import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.CassandraDaoUtil.convertStringToKeyHash;
 import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.CassandraDaoUtil.getByteBuffer;
-import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraModelConstants.EP_BY_APP_ID_APPLICATION_ID_PROPERTY;
-import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraModelConstants.EP_BY_APP_ID_COLUMN_FAMILY_NAME;
-import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraModelConstants.EP_COLUMN_FAMILY_NAME;
-import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraModelConstants.EP_EP_KEY_HASH_PROPERTY;
+import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraModelConstants.*;
 
 @Repository(value = "endpointProfileDao")
 public class EndpointProfileCassandraDao extends AbstractCassandraDao<CassandraEndpointProfile, ByteBuffer> implements EndpointProfileDao<CassandraEndpointProfile> {
@@ -138,15 +136,15 @@ public class EndpointProfileCassandraDao extends AbstractCassandraDao<CassandraE
     }
 
     @Override
-    public CassandraEndpointProfile findByAccessToken(String endpointAccessToken) {
+    public List<CassandraEndpointProfile> findByAccessToken(String endpointAccessToken) {
         LOG.debug("Try to find endpoint profile by access token id [{}]", endpointAccessToken);
-        CassandraEndpointProfile endpointProfile = null;
-        ByteBuffer epKeyHash = cassandraEPByAccessTokenDao.findEPIdByAccessToken(endpointAccessToken);
-        if (epKeyHash != null) {
-            endpointProfile = (CassandraEndpointProfile) getMapper().get(epKeyHash);
+        List<CassandraEndpointProfile> endpointProfiles = Collections.emptyList();
+        ByteBuffer[] epKeyHashList = cassandraEPByAccessTokenDao.findEPIdByAccessToken(endpointAccessToken);
+        if (epKeyHashList != null) {
+            endpointProfiles = findListByStatement(select().from(getColumnFamilyName()).where(in(EP_EP_KEY_HASH_PROPERTY, epKeyHashList)));
         }
-        LOG.trace("Found endpoint profile {} by access token [{}]", endpointProfile, endpointAccessToken);
-        return endpointProfile;
+        LOG.trace("Found endpoint profile {} by access token [{}]", endpointProfiles, endpointAccessToken);
+        return endpointProfiles;
     }
 
     @Override

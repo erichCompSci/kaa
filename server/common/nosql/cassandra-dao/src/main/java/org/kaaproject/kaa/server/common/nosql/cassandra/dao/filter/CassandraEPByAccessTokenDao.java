@@ -24,11 +24,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraModelConstants.EP_BY_ACCESS_TOKEN_ACCESS_TOKEN_PROPERTY;
 
 @Repository
 public class CassandraEPByAccessTokenDao extends AbstractCassandraDao<CassandraEPByAccessToken, String> {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraEPByAccessTokenDao.class);
+
     @Override
     protected Class<?> getColumnFamilyClass() {
         return CassandraEPByAccessToken.class;
@@ -39,13 +47,17 @@ public class CassandraEPByAccessTokenDao extends AbstractCassandraDao<CassandraE
         return CassandraModelConstants.EP_BY_ACCESS_TOKEN_COLUMN_FAMILY_NAME;
     }
 
-    public ByteBuffer findEPIdByAccessToken(String accessToken) {
+    public ByteBuffer[] findEPIdByAccessToken(String accessToken) {
         LOG.debug("Try to find endpoint key hash by access token {}", accessToken);
-        ByteBuffer endpointKeyHash = null;
-        CassandraEPByAccessToken result = findById(accessToken);
-        if (result != null) {
-            endpointKeyHash = result.getEndpointKeyHash();
+        List<CassandraEPByAccessToken> atList = findListByStatement(
+                select().from(getColumnFamilyName()).where(eq(EP_BY_ACCESS_TOKEN_ACCESS_TOKEN_PROPERTY, accessToken)));
+        ByteBuffer[] bbKeyHashList = null;
+        if (!atList.isEmpty()) {
+            bbKeyHashList = new ByteBuffer[atList.size()];
+            for (int i = 0; i < atList.size(); i++) {
+                bbKeyHashList[i] = atList.get(i).getEndpointKeyHash();
+            }
         }
-        return endpointKeyHash;
+        return bbKeyHashList;
     }
 }

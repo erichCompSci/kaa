@@ -16,6 +16,7 @@
 
 package org.kaaproject.kaa.server.common.nosql.cassandra.dao.model;
 
+import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
@@ -33,6 +34,7 @@ public class CassandraEPByAccessToken implements Serializable {
     @PartitionKey
     @Column(name = CassandraModelConstants.EP_BY_ACCESS_TOKEN_ACCESS_TOKEN_PROPERTY)
     private String accessToken;
+    @ClusteringColumn
     @Column(name = CassandraModelConstants.EP_BY_ACCESS_TOKEN_ENDPOINT_KEY_HASH_PROPERTY)
     private ByteBuffer endpointKeyHash;
 

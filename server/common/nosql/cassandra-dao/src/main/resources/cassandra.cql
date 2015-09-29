@@ -92,8 +92,9 @@ CREATE TABLE IF NOT EXISTS kaa.app_eps (
 );
 
 CREATE TABLE IF NOT EXISTS kaa.access_token_eps (
-    access_token text PRIMARY KEY ,
+    access_token text,
     ep_key_hash blob,
+    PRIMARY KEY (access_token, ep_key_hash)
 );
 
 CREATE TABLE IF NOT EXISTS kaa.user_conf (

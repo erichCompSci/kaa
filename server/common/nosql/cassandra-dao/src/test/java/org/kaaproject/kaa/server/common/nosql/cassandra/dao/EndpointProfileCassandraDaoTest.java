@@ -21,12 +21,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kaaproject.kaa.common.dto.EndpointProfileDto;
 import org.kaaproject.kaa.common.dto.EndpointUserDto;
+import org.kaaproject.kaa.server.common.dao.impl.DaoUtil;
 import org.kaaproject.kaa.server.common.nosql.cassandra.dao.model.CassandraEndpointProfile;
 import org.kaaproject.kaa.server.common.dao.model.EndpointProfile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,6 +36,8 @@ import java.util.List;
 @ContextConfiguration(locations = "/cassandra-client-test-context.xml")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class EndpointProfileCassandraDaoTest extends AbstractCassandraTest {
+
+    public static final String ACCESS_TOKEN = "Test";
 
     @Test
     public void testSave() throws Exception {
@@ -71,9 +75,19 @@ public class EndpointProfileCassandraDaoTest extends AbstractCassandraTest {
 
     @Test
     public void testFindByAccessToken() throws Exception {
-        EndpointProfileDto expected = generateEndpointProfile(null, null, null);
-        List<EndpointProfile> found = endpointProfileDao.findByAccessToken(expected.getAccessToken());
-        Assert.assertEquals(expected, found.toDto());
+        List<EndpointProfileDto> expectedList = new ArrayList<>(2);
+        expectedList.add(generateEndpointProfile(null, ACCESS_TOKEN, null));
+        expectedList.add(generateEndpointProfile(null, ACCESS_TOKEN, null));
+        List<EndpointProfileDto> found = DaoUtil.convertDtoList(endpointProfileDao.findByAccessToken(expectedList.get(0).getAccessToken()));
+        Assert.assertEquals(expectedList, found);
+    }
+
+    @Test
+    public void testFindOneByAccessToken() throws Exception {
+        List<EndpointProfileDto> expectedList = new ArrayList<>();
+        expectedList.add(generateEndpointProfile(null, "One", null));
+        List<EndpointProfileDto> found = DaoUtil.convertDtoList(endpointProfileDao.findByAccessToken(expectedList.get(0).getAccessToken()));
+        Assert.assertEquals(expectedList, found);
     }
 
     @Test
