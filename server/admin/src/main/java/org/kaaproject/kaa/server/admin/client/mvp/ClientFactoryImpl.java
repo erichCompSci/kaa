@@ -16,6 +16,10 @@
 
 package org.kaaproject.kaa.server.admin.client.mvp;
 
+import com.google.gwt.place.shared.Place;
+import com.google.gwt.place.shared.PlaceController;
+import com.google.web.bindery.event.shared.EventBus;
+import com.google.web.bindery.event.shared.SimpleEventBus;
 import org.kaaproject.avro.ui.shared.RecordField;
 import org.kaaproject.kaa.common.dto.ApplicationDto;
 import org.kaaproject.kaa.common.dto.ConfigurationSchemaDto;
@@ -77,6 +81,7 @@ import org.kaaproject.kaa.server.admin.client.mvp.view.notification.Notification
 import org.kaaproject.kaa.server.admin.client.mvp.view.profile.ProfileFilterViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.profile.ProfileSchemaViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.profile.ProfileSchemasViewImpl;
+import org.kaaproject.kaa.server.admin.client.mvp.view.profile.ServerProfileSchemaViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.sdk.GenerateSdkViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.settings.GeneralPropertiesViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.settings.MailPropertiesViewImpl;
@@ -91,11 +96,6 @@ import org.kaaproject.kaa.server.admin.client.mvp.view.user.UsersViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.verifier.UserVerifierViewImpl;
 import org.kaaproject.kaa.server.admin.client.mvp.view.verifier.UserVerifiersViewImpl;
 import org.kaaproject.kaa.server.admin.shared.config.ConfigurationRecordFormDto;
-
-import com.google.gwt.place.shared.Place;
-import com.google.gwt.place.shared.PlaceController;
-import com.google.web.bindery.event.shared.EventBus;
-import com.google.web.bindery.event.shared.SimpleEventBus;
 
 public class ClientFactoryImpl implements ClientFactory {
 
@@ -128,6 +128,7 @@ public class ClientFactoryImpl implements ClientFactory {
     private final BaseListView<ProfileSchemaDto> profileSchemasView = new ProfileSchemasViewImpl();
     private final BaseSchemaView profileSchemaView = new ProfileSchemaViewImpl(false);
     private final BaseSchemaView createProfileSchemaView = new ProfileSchemaViewImpl(true);
+    private final BaseSchemaView serverProfileSchemaView = new ServerProfileSchemaViewImpl(true);
 
     private final BaseListView<ConfigurationSchemaDto> configurationSchemasView = new ConfigurationSchemasViewImpl();
     private final BaseSchemaView configurationSchemaView = new ConfigurationSchemaViewImpl(false);
@@ -278,6 +279,11 @@ public class ClientFactoryImpl implements ClientFactory {
     @Override
     public BaseSchemaView getCreateProfileSchemaView() {
         return createProfileSchemaView;
+    }
+
+    @Override
+    public BaseSchemaView getServerProfileSchemaView() {
+        return serverProfileSchemaView;
     }
 
     @Override

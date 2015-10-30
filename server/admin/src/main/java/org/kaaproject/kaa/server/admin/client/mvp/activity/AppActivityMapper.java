@@ -16,6 +16,9 @@
 
 package org.kaaproject.kaa.server.admin.client.mvp.activity;
 
+import com.google.gwt.activity.shared.Activity;
+import com.google.gwt.activity.shared.ActivityMapper;
+import com.google.gwt.place.shared.Place;
 import org.kaaproject.kaa.server.admin.client.mvp.ClientFactory;
 import org.kaaproject.kaa.server.admin.client.mvp.place.AefMapPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.AefMapsPlace;
@@ -42,20 +45,18 @@ import org.kaaproject.kaa.server.admin.client.mvp.place.ProfileFilterPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.ProfileSchemaPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.ProfileSchemasPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.SendNotificationPlace;
+import org.kaaproject.kaa.server.admin.client.mvp.place.ServerProfileSchemaPlace;
+import org.kaaproject.kaa.server.admin.client.mvp.place.ServerProfileSchemasPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.TenantPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.TenantsPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.TopicPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.TopicsPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.UpdateUserConfigPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.UserPlace;
+import org.kaaproject.kaa.server.admin.client.mvp.place.UserProfilePlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.UserVerifierPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.UserVerifiersPlace;
 import org.kaaproject.kaa.server.admin.client.mvp.place.UsersPlace;
-import org.kaaproject.kaa.server.admin.client.mvp.place.UserProfilePlace;
-
-import com.google.gwt.activity.shared.Activity;
-import com.google.gwt.activity.shared.ActivityMapper;
-import com.google.gwt.place.shared.Place;
 
 public class AppActivityMapper implements ActivityMapper {
 
@@ -99,8 +100,12 @@ public class AppActivityMapper implements ActivityMapper {
                 return new EcfSchemaActivity((EcfSchemaPlace) place, clientFactory);
             } else if (clazz == ProfileSchemasPlace.class) {
                 return new ProfileSchemasActivity((ProfileSchemasPlace) place, clientFactory);
+            } else if (clazz == ServerProfileSchemasPlace.class) {
+                return new ServerProfileSchemasActivity((ServerProfileSchemasPlace) place, clientFactory);
             } else if (clazz == ProfileSchemaPlace.class) {
                 return new ProfileSchemaActivity((ProfileSchemaPlace) place, clientFactory);
+            } else if (clazz == ServerProfileSchemaPlace.class) {
+                return new ServerProfileSchemaActivity((ServerProfileSchemaPlace) place, clientFactory);
             } else if (clazz == ConfigurationSchemasPlace.class) {
                 return new ConfigurationSchemasActivity((ConfigurationSchemasPlace) place, clientFactory);
             } else if (clazz == ConfigurationSchemaPlace.class) {
