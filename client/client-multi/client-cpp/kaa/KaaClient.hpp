@@ -98,14 +98,14 @@ public:
     virtual const KaaRootConfiguration&         getConfiguration();
     virtual void                                setConfigurationStorage(IConfigurationStoragePtr storage);
     virtual void                                attachEndpoint(const std::string&  endpointAccessToken
-                                                , IAttachEndpointCallbackPtr listener = IAttachEndpointCallbackPtr{});
+                                                , IAttachEndpointCallbackPtr listener = IAttachEndpointCallbackPtr());
     virtual void                                detachEndpoint(const std::string&  endpointKeyHash
-                                                , IDetachEndpointCallbackPtr listener = IDetachEndpointCallbackPtr{});
+                                                , IDetachEndpointCallbackPtr listener = IDetachEndpointCallbackPtr());
     virtual void                                attachUser(const std::string& userExternalId, const std::string& userAccessToken
-                                                          , IUserAttachCallbackPtr listener = IUserAttachCallbackPtr{});
+                                                          , IUserAttachCallbackPtr listener = IUserAttachCallbackPtr());
     virtual void                                attachUser(const std::string& userExternalId, const std::string& userAccessToken
                                                           , const std::string& userVerifierToken
-                                                          , IUserAttachCallbackPtr listener = IUserAttachCallbackPtr{});
+                                                          , IUserAttachCallbackPtr listener = IUserAttachCallbackPtr());
     virtual void                                setAttachStatusListener(IAttachStatusListenerPtr listener);
     virtual bool                                isAttachedToUser();
     virtual std::int32_t                        findEventListeners(const std::list<std::string>& eventFQNs

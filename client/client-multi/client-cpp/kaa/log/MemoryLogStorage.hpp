@@ -79,13 +79,13 @@ private:
     typedef RequestId BlockId;
 
 private:
-    size_t totalOccupiedSize_ = 0;
-    size_t occupiedSizeOfUnmarkedRecords_ = 0;
+    size_t totalOccupiedSize_/* = 0*/;
+    size_t occupiedSizeOfUnmarkedRecords_/* = 0*/;
 
-    size_t unmarkedRecordCount_ = 0;
+    size_t unmarkedRecordCount_/* = 0*/;
 
-    size_t maxOccupiedSize_ = 0;
-    size_t shrinkedSize_ = 0;
+    size_t maxOccupiedSize_/* = 0*/;
+    size_t shrinkedSize_/* = 0*/;
 
     std::list<LogRecordWrapper> logs_;
     KAA_MUTEX_DECLARE(memoryLogStorageGuard_);

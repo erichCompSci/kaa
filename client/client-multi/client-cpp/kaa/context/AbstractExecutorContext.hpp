@@ -18,6 +18,7 @@
 #define ABSTRACTEXECUTORCONTEXT_HPP_
 
 #include <memory>
+#include <cstdlib>
 
 #include "kaa/utils/ThreadPool.hpp"
 #include "kaa/context/IExecutorContext.hpp"
@@ -25,6 +26,8 @@
 namespace kaa {
 
 class AbstractExecutorContext : public IExecutorContext {
+public:
+	AbstractExecutorContext() : awaitTerminationTimeout_(DEFAULT_AWAIT_TERMINATION_TIMEOUT) {}
 protected:
     IThreadPoolPtr createExecutor(std::size_t threadCount)
     {
@@ -49,7 +52,9 @@ protected:
     }
 
 protected:
-    std::size_t awaitTerminationTimeout_ = 5; // in seconds
+	static const std::size_t DEFAULT_AWAIT_TERMINATION_TIMEOUT = 5;
+
+    std::size_t awaitTerminationTimeout_/* = 5*/; // in seconds
 };
 
 } /* namespace kaa */
