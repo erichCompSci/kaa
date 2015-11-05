@@ -16,36 +16,37 @@
 
 package org.kaaproject.kaa.server.common.dao.model.sql;
 
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.kaaproject.kaa.common.dto.ProfileSchemaDto;
+import static org.kaaproject.kaa.server.common.dao.DaoConstants.SERVER_PROFILE_SCHEMA_TABLE_NAME;
+
+import java.io.Serializable;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.io.Serializable;
 
-import static org.kaaproject.kaa.server.common.dao.DaoConstants.PROFILE_SCHEMA_TABLE_NAME;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import org.kaaproject.kaa.common.dto.ServerProfileSchemaDto;
 
 @Entity
-@Table(name = PROFILE_SCHEMA_TABLE_NAME)
+@Table(name = SERVER_PROFILE_SCHEMA_TABLE_NAME)
 @OnDelete(action = OnDeleteAction.CASCADE)
-public final class ProfileSchema extends Schema<ProfileSchemaDto> implements Serializable {
+public class ServerProfileSchema extends Schema<ServerProfileSchemaDto> implements Serializable{
 
-    private static final long serialVersionUID = 953188575107921799L;
+    private static final long serialVersionUID = 5463606369181912766L;
 
-    public ProfileSchema() {
+    public ServerProfileSchema() {
     }
 
-    public ProfileSchema(Long id) {
+    public ServerProfileSchema(Long id) {
         setId(id);
     }
 
-    public ProfileSchema(ProfileSchemaDto dto) {
+    public ServerProfileSchema(ServerProfileSchemaDto dto) {
         super(dto);
     }
 
     @Override
-    protected ProfileSchemaDto createDto() {
-        return new ProfileSchemaDto();
+    protected ServerProfileSchemaDto createDto() {
+        return new ServerProfileSchemaDto();
     }
 }

@@ -142,6 +142,11 @@ public class DaoConstants {
     public static final String PROFILE_SCHEMA_TABLE_NAME = "profile_schema";
 
     /**
+     * Server Profile schema constants.
+     */
+    public static final String SERVER_PROFILE_SCHEMA_TABLE_NAME = "server_profile_schema";
+
+    /**
      * Profile filter constants.
      */
     public static final String PROFILE_FILTER_TABLE_NAME = "profile_filter";

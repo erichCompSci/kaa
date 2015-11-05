@@ -91,6 +91,7 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
     @Field(EP_CHANGED_FLAG)
     private Boolean changedFlag;
     private DBObject profile;
+    private DBObject serverProfile;
     @Field(EP_PROFILE_HASH)
     private byte[] profileHash;
     @Field(EP_PROFILE_VERSION)
@@ -135,6 +136,7 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
         this.nfSequenceNumber = dto.getNfSequenceNumber();
         this.changedFlag = dto.getChangedFlag();
         this.profile = (DBObject) JSON.parse(dto.getProfile());
+        this.serverProfile = (DBObject) JSON.parse(dto.getServerProfile());
         this.profileHash = dto.getProfileHash();
         this.profileVersion = dto.getProfileVersion();
         this.configurationHash = dto.getConfigurationHash();
@@ -245,6 +247,14 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
 
     public void setProfile(DBObject profile) {
         this.profile = profile;
+    }
+
+    public DBObject getServerProfile() {
+        return serverProfile;
+    }
+
+    public void setServerProfile(DBObject serverProfile) {
+        this.serverProfile = serverProfile;
     }
 
     public byte[] getProfileHash() {
@@ -414,6 +424,9 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
         if (profile != null ? !profile.equals(that.profile) : that.profile != null) {
             return false;
         }
+        if (serverProfile != null ? !serverProfile.equals(that.serverProfile) : that.serverProfile != null) {
+            return false;
+        }
         if (!Arrays.equals(profileHash, that.profileHash)) {
             return false;
         }
@@ -439,6 +452,7 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
         result = 31 * result + nfSequenceNumber;
         result = 31 * result + (changedFlag != null ? changedFlag.hashCode() : 0);
         result = 31 * result + (profile != null ? profile.hashCode() : 0);
+        result = 31 * result + (serverProfile != null ? serverProfile.hashCode() : 0);
         result = 31 * result + (profileHash != null ? Arrays.hashCode(profileHash) : 0);
         result = 31 * result + profileVersion;
         result = 31 * result + (configurationHash != null ? Arrays.hashCode(configurationHash) : 0);
@@ -466,6 +480,7 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
                 ", nfSequenceNumber=" + nfSequenceNumber +
                 ", changedFlag=" + changedFlag +
                 ", profile=" + profile +
+                ", serverProfile=" + serverProfile +
                 ", profileHash=" + Arrays.toString(profileHash) +
                 ", profileVersion=" + profileVersion +
                 ", configurationHash=" + Arrays.toString(configurationHash) +
@@ -497,6 +512,7 @@ public final class MongoEndpointProfile implements EndpointProfile, Serializable
         dto.setEndpointUserId(endpointUserId);
         dto.setAccessToken(accessToken);
         dto.setProfile(profile != null ? profile.toString() : "");
+        dto.setProfile(serverProfile != null ? serverProfile.toString() : "");
         dto.setProfileHash(profileHash);
         dto.setProfileVersion(profileVersion);
         dto.setProfileSchemaId(profileSchemaId);

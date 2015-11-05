@@ -95,6 +95,7 @@ public class CassandraModelConstants {
     public static final String EP_CONFIGURATION_SEQUENCE_NUMBER_PROPERTY = "cf_seq_num";
     public static final String EP_NOTIFICATION_SEQUENCE_NUMBER_PROPERTY = "nf_seq_num";
     public static final String EP_PROFILE_PROPERTY = "pf";
+    public static final String EP_SERVER_PROFILE_PROPERTY = "server_pf";
     public static final String EP_PROFILE_HASH_PROPERTY = "pf_hash";
     public static final String EP_PROFILE_VERSION_PROPERTY = "pf_ver";
     public static final String EP_CONFIGURATION_VERSION_PROPERTY = "cf_ver";

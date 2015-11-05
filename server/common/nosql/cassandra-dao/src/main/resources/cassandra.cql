@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS kaa.ep_profile (
     cf_seq_num int,
     nf_seq_num int,
     pf text,
+    server_pf text,
     pf_hash blob,
     pf_ver int,
     ucf_hash blob,

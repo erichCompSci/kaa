@@ -41,6 +41,7 @@ public class EndpointProfileDto implements HasId, Serializable {
     private byte[] ntHash;
     private Boolean changedFlag;
     private String profile;
+    private String serverProfile;
     private byte[] profileHash;
     private int profileVersion;
     private byte[] configurationHash;
@@ -141,6 +142,14 @@ public class EndpointProfileDto implements HasId, Serializable {
 
     public void setProfile(String profile) {
         this.profile = profile;
+    }
+
+    public String getServerProfile() {
+        return serverProfile;
+    }
+
+    public void setServerProfile(String serverProfile) {
+        this.serverProfile = serverProfile;
     }
 
     public byte[] getProfileHash() {
@@ -325,6 +334,9 @@ public class EndpointProfileDto implements HasId, Serializable {
         if (profile != null ? !profile.equals(that.profile) : that.profile != null) {
             return false;
         }
+        if (serverProfile != null ? !serverProfile.equals(that.serverProfile) : that.serverProfile != null) {
+            return false;
+        }
         if (!Arrays.equals(profileHash, that.profileHash)) {
             return false;
         }
@@ -352,6 +364,7 @@ public class EndpointProfileDto implements HasId, Serializable {
         result = 31 * result + cfSequenceNumber;
         result = 31 * result + (changedFlag != null ? changedFlag.hashCode() : 0);
         result = 31 * result + (profile != null ? profile.hashCode() : 0);
+        result = 31 * result + (serverProfile != null ? serverProfile.hashCode() : 0);
         result = 31 * result + (profileHash != null ? Arrays.hashCode(profileHash) : 0);
         result = 31 * result + profileVersion;
         result = 31 * result + (configurationHash != null ? Arrays.hashCode(configurationHash) : 0);
@@ -396,6 +409,8 @@ public class EndpointProfileDto implements HasId, Serializable {
         builder.append(changedFlag);
         builder.append(", profile=");
         builder.append(profile);
+        builder.append(", serverProfile=");
+        builder.append(serverProfile);
         builder.append(", profileHash=");
         builder.append(Arrays.toString(profileHash));
         builder.append(", profileVersion=");

@@ -87,6 +87,8 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
     private int nfSequenceNumber;
     @Column(name = EP_PROFILE_PROPERTY)
     private String profile;
+    @Column(name = EP_SERVER_PROFILE_PROPERTY)
+    private String serverProfile;
     @Column(name = EP_PROFILE_HASH_PROPERTY)
     private ByteBuffer profileHash;
     @Column(name = EP_PROFILE_VERSION_PROPERTY)
@@ -132,6 +134,7 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
         this.cfSequenceNumber = dto.getCfSequenceNumber();
         this.nfSequenceNumber = dto.getNfSequenceNumber();
         this.profile = dto.getProfile();
+        this.serverProfile = dto.getServerProfile();
         this.profileHash = getByteBuffer(dto.getProfileHash());
         this.profileVersion = dto.getProfileVersion();
         this.configurationHash = getByteBuffer(dto.getConfigurationHash());
@@ -238,6 +241,14 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
 
     public void setProfile(String profile) {
         this.profile = profile;
+    }
+
+    public String getServerProfile() {
+        return serverProfile;
+    }
+
+    public void setServerProfile(String serverProfile) {
+        this.serverProfile = serverProfile;
     }
 
     public ByteBuffer getProfileHash() {
@@ -388,6 +399,7 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
         if (nfGroupState != null ? !nfGroupState.equals(that.nfGroupState) : that.nfGroupState != null) return false;
         if (ntHash != null ? !ntHash.equals(that.ntHash) : that.ntHash != null) return false;
         if (profile != null ? !profile.equals(that.profile) : that.profile != null) return false;
+        if (serverProfile != null ? !serverProfile.equals(that.serverProfile) : that.serverProfile != null) return false;
         if (profileHash != null ? !profileHash.equals(that.profileHash) : that.profileHash != null) return false;
         if (profileSchemaId != null ? !profileSchemaId.equals(that.profileSchemaId) : that.profileSchemaId != null)
             return false;
@@ -412,6 +424,7 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
         result = 31 * result + cfSequenceNumber;
         result = 31 * result + nfSequenceNumber;
         result = 31 * result + (profile != null ? profile.hashCode() : 0);
+        result = 31 * result + (serverProfile != null ? serverProfile.hashCode() : 0);
         result = 31 * result + (profileHash != null ? profileHash.hashCode() : 0);
         result = 31 * result + profileVersion;
         result = 31 * result + (configurationHash != null ? configurationHash.hashCode() : 0);
@@ -443,6 +456,7 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
                 ", cfSequenceNumber=" + cfSequenceNumber +
                 ", nfSequenceNumber=" + nfSequenceNumber +
                 ", profile='" + profile + '\'' +
+                ", serverProfile='" + serverProfile + '\'' +
                 ", profileHash=" + profileHash +
                 ", profileVersion=" + profileVersion +
                 ", configurationHash=" + configurationHash +
@@ -476,6 +490,7 @@ public final class CassandraEndpointProfile implements EndpointProfile, Serializ
         dto.setEndpointUserId(endpointUserId);
         dto.setAccessToken(accessToken);
         dto.setProfile(profile);
+        dto.setServerProfile(serverProfile);
         dto.setProfileHash(getBytes(profileHash));
         dto.setProfileVersion(profileVersion);
         dto.setProfileSchemaId(profileSchemaId);
