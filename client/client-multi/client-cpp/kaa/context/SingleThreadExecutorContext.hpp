@@ -23,6 +23,8 @@ namespace kaa {
 
 class SingleThreadExecutorContext: public AbstractExecutorContext {
 public:
+    SingleThreadExecutorContext() : AbstractExecutorContext() {}
+
     virtual void init() { executor_ = createExecutor(1); }
     virtual void stop() { shutdownExecutor(executor_); }
 

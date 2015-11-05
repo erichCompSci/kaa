@@ -42,7 +42,8 @@
 namespace kaa {
 
 KaaClient::KaaClient()
-    : status_(new ClientStatus(CLIENT_STATUS_FILE_LOCATION))
+    : clientState_(State::CREATED)
+    , status_(new ClientStatus(CLIENT_STATUS_FILE_LOCATION))
     , options_(0)
 {
 

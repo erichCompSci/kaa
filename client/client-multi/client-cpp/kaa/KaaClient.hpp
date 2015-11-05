@@ -140,7 +140,7 @@ private:
     void checkClientStateNot(State unexpected, const std::string& message);
 
 private:
-    State                                           clientState_ = State::CREATED;
+    State                                           clientState_/* = State::CREATED*/;
 
     IKaaClientStateStoragePtr                       status_;
     IBootstrapManagerPtr                            bootstrapManager_;
