@@ -88,6 +88,7 @@ public interface ClientFactory {
     BaseListView<ProfileSchemaDto> getProfileSchemasView();
     BaseSchemaView getProfileSchemaView();
     BaseSchemaView getCreateProfileSchemaView();
+    BaseSchemaView getServerProfileSchemaView();
 
     BaseListView<ConfigurationSchemaDto> getConfigurationSchemasView();
     BaseSchemaView getConfigurationSchemaView();
